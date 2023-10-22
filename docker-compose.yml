@@ -1,0 +1,7 @@
+services:
+  app:
+    build: .
+    volumes:
+      - tgbot:/root
+volumes:
+  tgbot:
