@@ -1,13 +1,14 @@
-import sqlite3
+import asyncio
+from asyncio import Event
 
-import aiosqlite
 from aiogram import Bot, Dispatcher, types
+from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart
 from simple_settings import settings
 
-from tgbot import deps
 from tgbot.repositories import sql_users
 from tgbot.servicecs import ai
+from tgbot.utils import tick_iterator
 
 HI_MSG = 'Добро пожаловать!'
 CLOSE_MSG = 'Ходу нет!'
@@ -48,6 +49,24 @@ async def main_handler(message: types.Message) -> None:
     if message.text is None or message.from_user is None:
         return None
 
+    stop = Event()
+    asyncio.create_task(send_typing(message, stop))
+    await send_answer(message)
+    stop.set()
+
+
+async def send_typing(message: types.Message, stop: Event) -> None:
+    assert message.chat
+    assert message.bot
+    async for _ in tick_iterator(5):
+        if stop.is_set():
+            break
+        await message.bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
+
+
+async def send_answer(message: types.Message) -> None:
+    assert message.from_user
+    assert message.text
     user = await sql_users.get(message.from_user.id)
     if not user:
         return
@@ -65,11 +84,5 @@ async def main_handler(message: types.Message) -> None:
 
 
 async def run() -> None:
-    db = await aiosqlite.connect(settings.SQLITE_PATH)
-    try:
-        db.row_factory = sqlite3.Row
-        deps.db.set(db)
-        bot = Bot(settings.TG_TOKEN)
-        await dp.start_polling(bot)
-    finally:
-        await db.close()
+    bot = Bot(settings.TG_TOKEN, parse_mode=ParseMode.MARKDOWN)
+    await dp.start_polling(bot)

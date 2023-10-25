@@ -1,11 +1,17 @@
+from enum import Enum
 import openai
 from openai.openai_object import OpenAIObject
 from simple_settings import settings
 
 
+class Func(str, Enum):
+    bash = 'bash'
+    duckduckgo = 'duckduckgo'
+
+
 FUNCTIONS = [
     {
-        'name': 'execute_bash',
+        'name': Func.bash,
         'description': 'Execute any bash command in Debian buster, see output, store session',
         'parameters': {
             'type': 'object',
@@ -16,6 +22,20 @@ FUNCTIONS = [
                 },
             },
             'required': ['command'],
+        },
+    },
+    {
+        'name': Func.duckduckgo,
+        'description': 'Search anything on internet',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'quary': {
+                    'type': 'string',
+                    'description': 'Search quary',
+                },
+            },
+            'required': ['quary'],
         },
     },
 ]
