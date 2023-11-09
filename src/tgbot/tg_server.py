@@ -74,13 +74,7 @@ async def send_answer(message: types.Message) -> None:
         return
 
     state = await ai.get_chat_state(user)
-    if state.need_approve:
-        if message.text.lower() in ('да', 'д', 'ok', 'ок', 'давай', 'yes', 'y'):
-            answer = await state.execute()
-        else:
-            answer = await state.send(message.text)
-    else:
-        answer = await state.send(message.text)
+    answer = await state.send(message.text)
 
     await message.answer(answer)
 

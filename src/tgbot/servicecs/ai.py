@@ -11,32 +11,6 @@ class ChatState:
         self.user = user
         self.messages = messages
 
-    @property
-    def need_approve(self) -> bool:
-        return len(self.messages) > 0 and 'function_call' in self.messages[-1]
-
-    async def execute(self) -> str:
-        if not self.messages:
-            return 'Нечего исполнять'
-        message = self.messages[-1]
-        function_call = message['function_call']
-        match function_call['name']:
-            case Func.bash:
-                raw_args = function_call['arguments']
-                function_args = json.loads(raw_args)
-                command = function_args.get('command')
-                if not command:
-                    raise Exception('no command arg')
-                stdout = await bash.execute(command)
-                self.messages.append({
-                    'role': 'function',
-                    'name': function_call['name'],
-                    'content': stdout,
-                })
-                return await self._send_messages()
-            case _:
-                raise Exception('bad func name {}'.format(function_call['name']))
-
     async def send(self, text: str) -> str:
         new_message = {'role': 'user', 'content': text}
         self.messages.append(new_message)
@@ -68,8 +42,13 @@ class ChatState:
                 command = function_args.get('command')
                 if not command:
                     raise ArgRequired('command')
-                await sql_chat_messages.create(self.user.chat_id, dict(response_message))
-                return 'Разрешить исполнение?\n`{}`'.format(command)
+                stdout = await bash.execute(command)
+                self.messages.append({
+                    'role': 'function',
+                    'name': function_call['name'],
+                    'content': stdout,
+                })
+                return await self._send_messages()
             case Func.duckduckgo:
                 raw_args = function_call['arguments']
                 function_args = json.loads(raw_args)
