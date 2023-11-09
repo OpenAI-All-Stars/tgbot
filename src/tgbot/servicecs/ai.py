@@ -21,7 +21,7 @@ class ChatState:
         message = self.messages[-1]
         function_call = message['function_call']
         match function_call['name']:
-            case 'execute_bash':
+            case Func.bash:
                 raw_args = function_call['arguments']
                 function_args = json.loads(raw_args)
                 command = function_args.get('command')

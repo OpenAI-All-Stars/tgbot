@@ -51,8 +51,10 @@ async def main_handler(message: types.Message) -> None:
 
     stop = Event()
     asyncio.create_task(send_typing(message, stop))
-    await send_answer(message)
-    stop.set()
+    try:
+        await send_answer(message)
+    finally:
+        stop.set()
 
 
 async def send_typing(message: types.Message, stop: Event) -> None:
