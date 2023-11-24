@@ -23,8 +23,6 @@ async def create_db() -> None:
 @cli.command()
 @async_command
 async def server() -> None:
-    from simple_settings import settings
-    print('SQLITE_PATH', settings.SQLITE_PATH)
     async with deps.use_all():
         await sql_init.create_db()
         await tg_server.run()
