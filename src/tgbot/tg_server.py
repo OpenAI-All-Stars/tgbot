@@ -2,6 +2,8 @@ import asyncio
 from asyncio import Event
 
 from aiogram import Bot, Dispatcher, types
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart
 from simple_settings import settings
@@ -80,5 +82,12 @@ async def send_answer(message: types.Message) -> None:
 
 
 async def run() -> None:
-    bot = Bot(settings.TG_TOKEN, parse_mode=ParseMode.MARKDOWN)
+    bot = Bot(
+        settings.TG_TOKEN,
+        parse_mode=ParseMode.MARKDOWN,
+        session=AiohttpSession(api=TelegramAPIServer(
+            base=settings.TELEGRAM_BASE_URL + '/bot{token}/test/{method}',
+            file=settings.TELEGRAM_BASE_URL + '/file/bot{token}/test/{path}',
+        )),
+    )
     await dp.start_polling(bot)

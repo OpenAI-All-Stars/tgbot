@@ -20,6 +20,9 @@ httpx = {"version" = "^0.25.0", "extras" = ["http2"]}
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.4.0"
 flake8 = "^6.0.0"
+pytest = "^7.4.3"
+aiohttp = "^3.9.1"
+pytest-asyncio = "^0.21.1"
 
 [build-system]
 requires = ["poetry-core"]
