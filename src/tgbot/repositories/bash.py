@@ -1,11 +1,6 @@
-from asyncio import create_subprocess_shell, subprocess
+from tgbot.clients import http_executor
 
 
 async def execute(command: str) -> str:
-    proc = await create_subprocess_shell(
-        command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
-
-    stdout, stderr = await proc.communicate()
-    return stdout.decode() + stderr.decode()
+    resp = await http_executor.execute_bash(command)
+    return resp.stdout + resp.stderr
