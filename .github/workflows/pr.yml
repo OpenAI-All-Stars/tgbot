@@ -24,7 +24,6 @@ jobs:
             docker push ${{ env.DOCKER_TAG }}
 
     tests:
-        needs: build
         name: Tests
         runs-on: ubuntu-latest
 

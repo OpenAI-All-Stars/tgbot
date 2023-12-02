@@ -3,6 +3,7 @@ __pycache__
 *.sqlite3
 .tox
 .mypy_cache
-.git
+.git*
 docker-compose.yml
 .github
+.venv
