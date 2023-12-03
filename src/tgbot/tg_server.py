@@ -85,9 +85,8 @@ async def run() -> None:
     bot = Bot(
         settings.TG_TOKEN,
         parse_mode=ParseMode.MARKDOWN,
-        session=AiohttpSession(api=TelegramAPIServer(
-            base=settings.TELEGRAM_BASE_URL + '/bot{token}/test/{method}',
-            file=settings.TELEGRAM_BASE_URL + '/file/bot{token}/test/{path}',
-        )),
+        session=AiohttpSession(
+            api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
+        ),
     )
     await dp.start_polling(bot)
