@@ -3,11 +3,9 @@ services:
     container_name: tgbot
     image: ghcr.io/openai-all-stars/tgbot:latest
     volumes:
-      - tgbot:/app
+      - ~/data:/app/data
     environment:
       - OPENAI_API_KEY=$OPENAI_API_KEY
       - TG_TOKEN=$TG_TOKEN
       - SECRET_PHRASE=$SECRET_PHRASE
-      - SQLITE_PATH=/app/db.sqlite3
-volumes:
-  tgbot:
+      - SQLITE_PATH=/app/data/db.sqlite3
