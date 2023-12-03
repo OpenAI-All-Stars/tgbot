@@ -4,7 +4,7 @@ from datetime import datetime
 
 async def test_success(settings, mock_server):
     update_mock = mock_server.add_request_mock(
-        'POST', f'/bot{settings.TG_TOKEN}/test/getUpdates',
+        'POST', f'/bot{settings.TG_TOKEN}/getUpdates',
         response_json={
             'ok': True,
             'result': [{
@@ -27,7 +27,7 @@ async def test_success(settings, mock_server):
         },
     )
     send_mock = mock_server.add_request_mock(
-        'POST', f'/bot{settings.TG_TOKEN}/test/sendMessage',
+        'POST', f'/bot{settings.TG_TOKEN}/sendMessage',
         response_json={
             'ok': True,
             'result': {
