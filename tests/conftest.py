@@ -23,7 +23,7 @@ def app_env(mock_server_url):
 @pytest.fixture(scope='session', autouse=True)
 async def _server(settings, mock_server) -> str:
     get_me_mock = mock_server.add_request_mock(
-        'POST', f'/bot{settings.TG_TOKEN}/test/getMe',
+        'POST', f'/bot{settings.TG_TOKEN}/getMe',
         response_json={
             'ok': True,
             'result': {
