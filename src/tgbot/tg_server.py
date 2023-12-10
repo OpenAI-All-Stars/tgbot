@@ -14,6 +14,7 @@ from tgbot.utils import tick_iterator
 
 HI_MSG = 'Добро пожаловать!'
 CLOSE_MSG = 'Ходу нет!'
+AUTH_MSG = 'Требуется авторизация - /start XXX'
 ALREADY_MSG = 'И снова добрый день!'
 
 dp = Dispatcher()
@@ -73,6 +74,7 @@ async def send_answer(message: types.Message) -> None:
     assert message.text
     user = await sql_users.get(message.from_user.id)
     if not user:
+        await message.answer(AUTH_MSG)
         return
 
     state = await ai.get_chat_state(user)
