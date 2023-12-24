@@ -9,6 +9,9 @@ jobs:
     generate:
         name: Generate
         runs-on: ubuntu-latest
+        env:
+          SIMPLE_SETTINGS: tgbot.settings.prod
+          SECRET_INVITE: {{ secrets.SECRET_INVITE }}
 
         steps:
         - name: Set up Python
@@ -21,4 +24,4 @@ jobs:
         - name: Install deps
           run: poetry install
         - name: Generate code
-          run: SIMPLE_SETTINGS tgbot.settings.prod tgbot generate-invite-code
+          run: tgbot generate-invite-code
