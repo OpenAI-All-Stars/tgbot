@@ -12,7 +12,7 @@ FIRST_SEGMENT = json.dumps({
 
 
 def generate_code():
-    encoded_jwt = jwt.encode(time.time(), settings.SECRET_INVITE, algorithm='HS256')
+    encoded_jwt = jwt.encode({'t': time.time()}, settings.SECRET_INVITE, algorithm='HS256')
     parts = encoded_jwt.split('.')
     return '.'.join(parts[1:])
 
@@ -22,4 +22,4 @@ def get_payload(code: str) -> str | None:
         payload = jwt.decode(f'{FIRST_SEGMENT}.{code}', settings.SECRET_INVITE, algorithms=['HS256'])
     except jwt.PyJWTError:
         return None
-    return str(payload)
+    return str(payload['t'])
