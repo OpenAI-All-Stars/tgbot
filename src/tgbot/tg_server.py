@@ -6,7 +6,6 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart
-import jwt
 from simple_settings import settings
 
 from tgbot.repositories import invite, sql_users
