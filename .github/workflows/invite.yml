@@ -1,5 +1,7 @@
 name: invite
-on: workflow_dispatch
+on:
+  pull_request:
+    branches: [ "main" ]
 
 env:
   DOCKER_TAG: ghcr.io/openai-all-stars/tgbot:latest
@@ -10,6 +12,7 @@ jobs:
         name: Generate
         runs-on: ubuntu-latest
         env:
+          POETRY_VIRTUALENVS_CREATE: false
           SIMPLE_SETTINGS: tgbot.settings.prod
           SECRET_INVITE: ${{ secrets.SECRET_INVITE }}
 
