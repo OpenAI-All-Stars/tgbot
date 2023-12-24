@@ -8,13 +8,13 @@ from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart
 from simple_settings import settings
 
-from tgbot.repositories import sql_users
+from tgbot.repositories import invite, sql_users
 from tgbot.servicecs import ai
 from tgbot.utils import tick_iterator
 
 HI_MSG = 'Добро пожаловать!'
 CLOSE_MSG = 'Ходу нет!'
-AUTH_MSG = 'Требуется авторизация - /start XXX'
+AUTH_MSG = 'Требуется авторизация'
 ALREADY_MSG = 'И снова добрый день!'
 
 dp = Dispatcher()
@@ -35,16 +35,21 @@ async def cmd_start(message: types.Message) -> None:
         return
 
     code = parts[1]
-    if code == settings.SECRET_PHRASE:
-        await sql_users.create(
-            message.from_user.id,
-            message.chat.id,
-            message.from_user.full_name,
-            message.from_user.username or '',
-        )
-        await message.answer(HI_MSG)
-    else:
-        await message.answer(CLOSE_MSG)
+    payload = invite.get_payload(code)
+    if payload is None:
+        await message.answer('Невалидный код')
+        return
+    if await sql_users.exists_code(payload):
+        await message.answer('Код не действителен')
+        return
+    await sql_users.create(
+        message.from_user.id,
+        message.chat.id,
+        payload,
+        message.from_user.full_name,
+        message.from_user.username or '',
+    )
+    await message.answer(HI_MSG)
 
 
 @dp.message()

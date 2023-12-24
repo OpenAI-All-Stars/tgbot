@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS chat_messages
     body             TEXT,
     created_at       INTEGER
 );
+
+ALTER TABLE users ADD COLUMN invite_code TEXT;

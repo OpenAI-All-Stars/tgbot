@@ -2,4 +2,4 @@ from .base import *  # noqa
 
 
 TG_TOKEN = '1:verni-stenu'
-SECRET_PHRASE = 'meow'
+SECRET_INVITE = 'meow'

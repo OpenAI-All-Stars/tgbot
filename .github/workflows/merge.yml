@@ -25,7 +25,7 @@ jobs:
           run: |
             export TG_TOKEN=${{ secrets.TG_TOKEN }}
             export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            export SECRET_PHRASE=${{ secrets.SECRET_PHRASE }}
+            export SECRET_INVITE=${{ secrets.SECRET_INVITE }}
             cat docker-compose.yml | envsubst > docker-compose-secret.yml
         - name: copy docker compose config
           run: scp docker-compose-secret.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:docker-compose.yml

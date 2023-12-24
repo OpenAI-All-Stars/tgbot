@@ -1,0 +1,27 @@
+name: invite
+on: workflow_dispatch
+
+env:
+  DOCKER_TAG: ghcr.io/openai-all-stars/tgbot:latest
+
+jobs:
+
+    generate:
+        name: Generate
+        runs-on: ubuntu-latest
+        env:
+          SIMPLE_SETTINGS: tgbot.settings.prod
+          SECRET_INVITE: {{ secrets.SECRET_INVITE }}
+
+        steps:
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: 3.11
+        - uses: actions/checkout@v3
+        - name: Install poetry
+          run: pip install poetry
+        - name: Install deps
+          run: poetry install
+        - name: Generate code
+          run: tgbot generate-invite-code
