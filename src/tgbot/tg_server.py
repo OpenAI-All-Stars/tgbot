@@ -36,18 +36,17 @@ async def cmd_start(message: types.Message) -> None:
         return
 
     code = parts[1]
-    if await sql_users.exists_code(code):
-        await message.answer('Код не действителен')
-        return
-    try:
-        invite.validate_code(code)
-    except jwt.PyJWTError:
+    payload = invite.get_payload(code)
+    if payload is None:
         await message.answer('Невалидный код')
+        return
+    if await sql_users.exists_code(payload):
+        await message.answer('Код не действителен')
         return
     await sql_users.create(
         message.from_user.id,
         message.chat.id,
-        code,
+        payload,
         message.from_user.full_name,
         message.from_user.username or '',
     )

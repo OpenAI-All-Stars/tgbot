@@ -17,5 +17,9 @@ def generate_code():
     return '.'.join(parts[1:])
 
 
-def validate_code(code: str):
-    jwt.decode(f'{FIRST_SEGMENT}.{code}', settings.SECRET_INVITE, algorithms=['HS256'])
+def get_payload(code: str) -> str | None:
+    try:
+        payload = jwt.decode(f'{FIRST_SEGMENT}.{code}', settings.SECRET_INVITE, algorithms=['HS256'])
+    except jwt.PyJWTError:
+        return None
+    return str(payload)
