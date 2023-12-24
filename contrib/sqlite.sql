@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS users
     chat_id          INTEGER UNIQUE,
     user_id          INTEGER UNIQUE,
     full_name        TEXT,
-    username         TEXT
+    username         TEXT,
+    invite_code      TEXT
 );
 
 CREATE TABLE IF NOT EXISTS chat_messages
@@ -12,5 +13,3 @@ CREATE TABLE IF NOT EXISTS chat_messages
     body             TEXT,
     created_at       INTEGER
 );
-
-ALTER TABLE users ADD COLUMN invite_code TEXT;
