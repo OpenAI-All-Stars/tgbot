@@ -1,7 +1,5 @@
 name: invite
-on:
-  pull_request:
-    branches: [ "main" ]
+on: workflow_dispatch
 
 env:
   DOCKER_TAG: ghcr.io/openai-all-stars/tgbot:latest
