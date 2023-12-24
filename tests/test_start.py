@@ -21,7 +21,7 @@ async def test_success(settings, mock_server):
                         'is_bot': False,
                         'first_name': 'cat',
                     },
-                    'text': f'/start {settings.SECRET_PHRASE}'
+                    'text': f'/start {settings.SECRET_INVITE}'
                 },
             }],
         },
