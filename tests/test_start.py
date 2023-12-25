@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 
 
@@ -21,7 +20,7 @@ async def test_success(settings, mock_server):
                         'is_bot': False,
                         'first_name': 'cat',
                     },
-                    'text': f'/start {settings.SECRET_INVITE}'
+                    'text': f'/start eyJ0IjoxNzAzNDc3MTAwLjY4OTIzMDd9.BbWPzLxEwhu6ZWUIqpq_WLeR6cwzwp9bUfa07Ja8W_A'
                 },
             }],
         },
@@ -41,14 +40,12 @@ async def test_success(settings, mock_server):
         },
     )
 
-    for _ in range(10):
-        await asyncio.sleep(1)
-        if update_mock.requests_count:
-            break
-    for _ in range(10):
-        await asyncio.sleep(1)
-        if send_mock.requests_count:
-            break
+    assert await update_mock.wait()
+    assert await send_mock.wait()
 
-    assert update_mock.requests_count
-    assert send_mock.requests_count
+    got = send_mock.requests[0].encode_text()
+    assert got == {
+        'chat_id': '111',
+        'text': 'Добро пожаловать!',
+        'parse_mode': 'Markdown',
+    }

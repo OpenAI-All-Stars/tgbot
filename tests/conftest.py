@@ -1,4 +1,6 @@
 import asyncio
+from dataclasses import dataclass
+import json
 import logging
 import os
 from pathlib import Path
@@ -6,6 +8,7 @@ import socket
 import subprocess
 import time
 from typing import Any
+from urllib.parse import parse_qs
 
 from aiohttp import web
 import aiohttp
@@ -20,7 +23,7 @@ def app_env(mock_server_url):
     }
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(autouse=True)
 async def _server(settings, mock_server) -> str:
     get_me_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getMe',
@@ -36,12 +39,8 @@ async def _server(settings, mock_server) -> str:
 
     p = subprocess.Popen(['tgbot', 'server'])
     try:
-        for _ in range(10):
-            await asyncio.sleep(1)
-            if get_me_mock.requests_count:
-                yield
-                return
-        raise Exception('server start failed')
+        if await get_me_mock.wait():
+            yield
     finally:
         p.kill()
 
@@ -95,10 +94,37 @@ def _mock_server_clean(mock_server):
         mock_server.clean()
 
 
+@dataclass
+class RequestInfo:
+    text: str | None
+
+    def json(self) -> dict | None:
+        if self.text:
+            return json.loads(self.text)
+
+    def encode_text(self) -> dict:
+        return {
+            k: v[0] if len(v) == 1 else v
+            for k, v in parse_qs(self.text).items()
+        }
+
+
 class MockRequest:
     def __init__(self, response_json: Any) -> None:
         self.response_json = response_json
-        self.requests_count = 0
+        self.requests: list[RequestInfo] = []
+    
+    @property
+    def requests_count(self) -> int:
+        return len(self.requests)
+
+    async def wait(self, timeout_s: float = 10) -> bool:
+        start = time.monotonic()
+        while (time.monotonic() - start) < timeout_s:
+            if self.requests:
+                return True
+            await asyncio.sleep(0.01)
+        return False
 
 
 class MockServer:
@@ -132,11 +158,15 @@ class MockServer:
         return mock
 
     @web.middleware
-    async def _route_middleware(self, request, handler):
+    async def _route_middleware(self, request: web.Request, handler):
         key = self._get_route_key(request.method, request.path)
         mock = self._routes.get(key)
         if mock:
-            mock.requests_count += 1
+            mock.requests.append(
+                RequestInfo(
+                    text=await request.text(),
+                )
+            )
             return web.json_response(mock.response_json)
         raise web.HTTPNotFound()
 
