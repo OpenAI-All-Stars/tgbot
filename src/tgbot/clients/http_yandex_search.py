@@ -58,7 +58,4 @@ async def search(query: str) -> str:
     if not results:
         logger.error(f'search fail: {data}')
 
-    if not results:
-        logger.error(f'search fail: {data}')
-
     return json.dumps(results)
