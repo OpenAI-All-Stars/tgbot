@@ -1,16 +1,16 @@
 from contextlib import asynccontextmanager
 import sqlite3
 from typing import AsyncIterator
+from aiohttp import ClientSession
 from aiosqlite import Connection
 import aiosqlite
 from simple_settings import settings
 
 from tgbot.registry import RegistryValue
-from tgbot.clients.duck_duck_go import AsyncDDGS
 
 
 db = RegistryValue[Connection]()
-duck_client = RegistryValue[AsyncDDGS]()
+http_client = RegistryValue[ClientSession]()
 
 
 @asynccontextmanager
@@ -25,13 +25,13 @@ async def use_db() -> AsyncIterator[Connection]:
 
 
 @asynccontextmanager
-async def use_duck() -> AsyncIterator[AsyncDDGS]:
-    async with AsyncDDGS() as client:
-        duck_client.set(client)
+async def use_http_client() -> AsyncIterator[ClientSession]:
+    async with ClientSession() as client:
+        http_client.set(client)
         yield client
 
 
 @asynccontextmanager
 async def use_all() -> AsyncIterator[None]:
-    async with (use_db(), use_duck()):
+    async with (use_db(), use_http_client()):
         yield

@@ -32,4 +32,4 @@ async def server() -> None:
 @async_command
 async def generate_invite_code() -> None:
     code = invite.generate_code()
-    print(f'https://t.me/nice_hole_bot?start={code}')
+    print(code)

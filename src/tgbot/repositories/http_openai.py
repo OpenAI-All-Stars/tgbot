@@ -6,7 +6,7 @@ from simple_settings import settings
 
 class Func(str, Enum):
     bash = 'bash'
-    duckduckgo = 'duckduckgo'
+    web_search = 'web_search'
 
 
 FUNCTIONS = [
@@ -25,8 +25,8 @@ FUNCTIONS = [
         },
     },
     {
-        'name': Func.duckduckgo,
-        'description': 'Search anything on internet',
+        'name': Func.web_search,
+        'description': 'Search on internet',
         'parameters': {
             'type': 'object',
             'properties': {
