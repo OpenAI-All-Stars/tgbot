@@ -82,8 +82,8 @@ async def send_answer(message: types.Message) -> None:
         await message.answer(AUTH_MSG)
         return
 
-    state = await ai.get_chat_state(user)
-    answer = await state.send(message.text)
+    state = await ai.get_chat_state(message, user)
+    answer = await state.send()
 
     await message.answer(answer)
 
