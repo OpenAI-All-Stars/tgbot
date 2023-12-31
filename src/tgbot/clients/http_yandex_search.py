@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from xml.etree import ElementTree
 
 import aiohttp
@@ -7,6 +8,9 @@ import backoff
 from simple_settings import settings
 
 from tgbot.deps import http_client
+
+
+logger = logging.getLogger(__name__)
 
 
 @backoff.on_exception(backoff.constant, (aiohttp.ClientError, asyncio.TimeoutError), max_tries=3)
@@ -50,5 +54,8 @@ async def search(query: str) -> str:
                 'url': e.text,
                 'description': '\n'.join(description)
             })
+    
+    if not results:
+        logger.error(f'search fail: {data}')
 
     return json.dumps(results)
