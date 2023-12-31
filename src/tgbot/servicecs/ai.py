@@ -64,7 +64,7 @@ class ChatState:
                 quary = function_args.get('quary')
                 if not quary:
                     raise ArgRequired('quary')
-                content = http_yandex_search.search(quary)
+                content = await http_yandex_search.search(quary)
                 await sql_chat_messages.create(self.user.chat_id, dict(response_message))
                 self.messages.append({
                     'role': 'function',
