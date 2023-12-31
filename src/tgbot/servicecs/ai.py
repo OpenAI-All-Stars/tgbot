@@ -43,7 +43,7 @@ class ChatState:
             answer = response_message.content
             await sql_chat_messages.create(self.user.chat_id, dict(response_message))
             return answer
-        self.message.answer('вызываю функцию {}'.format(function_call['name']))
+        await self.message.answer('вызываю функцию {}'.format(function_call['name']))
         match function_call['name']:
             case Func.bash:
                 raw_args = function_call['arguments']
