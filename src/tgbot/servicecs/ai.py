@@ -43,9 +43,9 @@ class ChatState:
             answer = response_message.content
             await sql_chat_messages.create(self.user.chat_id, dict(response_message))
             return answer
-        await self.message.answer('вызываю функцию {}'.format(function_call['name']))
         match function_call['name']:
             case Func.bash:
+                await self.message.answer('исполняю команду bash..')
                 raw_args = function_call['arguments']
                 function_args = json.loads(raw_args)
                 command = function_args.get('command')
@@ -59,6 +59,7 @@ class ChatState:
                 })
                 return await self._send_messages()
             case Func.web_search:
+                await self.message.answer('ищу в интернете..')
                 raw_args = function_call['arguments']
                 function_args = json.loads(raw_args)
                 quary = function_args.get('quary')
