@@ -54,7 +54,7 @@ async def search(query: str) -> str:
                 'url': e.text,
                 'description': '\n'.join(description)
             })
-    
+
     if not results:
         logger.error(f'search fail: {data}')
 
