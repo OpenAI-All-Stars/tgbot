@@ -40,7 +40,7 @@ async def search(query: str) -> str:
         e = doc.find('charset')
         charset = e.text if e else 'utf-8'
         passages = doc.find('passages')
-        if passages:
+        if passages is not None:
             for passage in passages:
                 description.append(ElementTree.tostring(passage, encoding=charset, method='text').decode())
         else:
@@ -49,7 +49,7 @@ async def search(query: str) -> str:
                 description.append(ElementTree.tostring(title, encoding=charset, method='text').decode())
 
         e = doc.find('url')
-        if e:
+        if e is not None:
             results.append({
                 'url': e.text,
                 'description': '\n'.join(description)
