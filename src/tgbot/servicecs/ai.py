@@ -46,7 +46,7 @@ class ChatState:
         self.messages.append({
             'role': 'function',
             'name': function_call['name'],
-            'content': stdout,
+            'content': response_message,
         })
         match function_call['name']:
             case Func.bash:
