@@ -43,11 +43,7 @@ class ChatState:
             answer = response_message.content
             await sql_chat_messages.create(self.user.chat_id, dict(response_message))
             return answer
-        self.messages.append({
-            'role': 'function',
-            'name': function_call['name'],
-            'content': response_message,
-        })
+        self.messages.append(response_message)
         match function_call['name']:
             case Func.bash:
                 await self.message.answer('исполняю команду bash..')
