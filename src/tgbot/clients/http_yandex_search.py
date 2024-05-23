@@ -17,18 +17,17 @@ logger = logging.getLogger(__name__)
 async def search(query: str) -> str:
     client = http_client.get()
     resp = await client.get(
-            settings.YANDEX_SEARCH_URL,
-            params={
-                'apikey': settings.YANDEX_SEARCH_API_KEY,
-                'folderid': settings.YANDEX_FOLDERID,
-                'filter': 'none',
-                'lr': '225',
-                'l10n': 'ru',
-                'query': query,
-                'page': 1,
-
-            },
-        )
+        settings.YANDEX_SEARCH_URL,
+        params={
+            'apikey': settings.YANDEX_SEARCH_API_KEY,
+            'folderid': settings.YANDEX_FOLDERID,
+            'filter': 'none',
+            'lr': '225',
+            'l10n': 'ru',
+            'query': query,
+            'page': 1,
+        },
+    )
     resp.raise_for_status()
     data = await resp.text()
 
