@@ -7,6 +7,7 @@ from simple_settings import settings
 class Func(str, Enum):
     bash = 'bash'
     web_search = 'web_search'
+    web_read = 'web_read'
 
 
 FUNCTIONS = [
@@ -36,6 +37,20 @@ FUNCTIONS = [
                 },
             },
             'required': ['quary'],
+        },
+    },
+    {
+        'name': Func.web_read,
+        'description': 'Open url and read it, return text as markdown',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'url': {
+                    'type': 'string',
+                    'description': 'url',
+                },
+            },
+            'required': ['url'],
         },
     },
 ]
