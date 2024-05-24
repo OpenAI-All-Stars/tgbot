@@ -31,8 +31,3 @@ pyright = "^1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.pyright]
-venvPath=".tox"
-reportMissingImports=false
-reportFunctionMemberAccess=false

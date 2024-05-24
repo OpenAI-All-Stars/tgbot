@@ -2,13 +2,11 @@ import json
 import logging
 
 from aiogram import types
-from openai.types.chat.chat_completion_message_param import (
-    ChatCompletionSystemMessageParam,
-    ChatCompletionMessageParam,
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionUserMessageParam,
-    ChatCompletionFunctionMessageParam,
-)
+from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
+from openai.types.chat.chat_completion_function_message_param import ChatCompletionFunctionMessageParam
+from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
+from openai.types.chat.chat_completion_user_message_param import ChatCompletionUserMessageParam
+from openai.types.chat.chat_completion_assistant_message_param import FunctionCall, ChatCompletionAssistantMessageParam
 
 from tgbot.clients import http_yandex_search
 from tgbot.entities.user import User
@@ -56,22 +54,26 @@ class ChatState:
         resp = await http_openai.send(str(self.user.chat_id), self.messages)
         assistant_message = ChatCompletionAssistantMessageParam(
             role=resp.choices[0].message.role,
-            function_call=resp.choices[0].message.function_call,
             content=resp.choices[0].message.content,
         )
+        if resp.choices[0].message.function_call:
+            assistant_message['function_call'] = FunctionCall(
+                name=resp.choices[0].message.function_call.name,
+                arguments=resp.choices[0].message.function_call.arguments,
+            )
 
         await sql_chat_messages.create(self.user.chat_id, self.messages[-1])
 
         function_call = assistant_message.get('function_call')
         if not function_call:
-            answer = assistant_message['content']
+            answer = assistant_message.get('content') or ''
             await sql_chat_messages.create(self.user.chat_id, assistant_message)
             return answer
         self.messages.append(assistant_message)
 
-        match function_call.name:
+        match function_call['name']:
             case Func.bash:
-                raw_args = function_call.arguments
+                raw_args = function_call['arguments']
                 function_args = json.loads(raw_args)
                 command = function_args.get('command')
                 if not command:
@@ -81,12 +83,12 @@ class ChatState:
                 await sql_chat_messages.create(self.user.chat_id, assistant_message)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
-                    name=function_call.name,
+                    name=function_call['name'],
                     content=stdout,
                 ))
                 return None
             case Func.web_search:
-                raw_args = function_call.arguments
+                raw_args = function_call['arguments']
                 function_args = json.loads(raw_args)
                 quary = function_args.get('quary')
                 if not quary:
@@ -96,12 +98,12 @@ class ChatState:
                 await sql_chat_messages.create(self.user.chat_id, assistant_message)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
-                    name=function_call.name,
+                    name=function_call['name'],
                     content=content,
                 ))
                 return None
             case Func.web_read:
-                raw_args = function_call.arguments
+                raw_args = function_call['arguments']
                 function_args = json.loads(raw_args)
                 url = function_args.get('url')
                 if not url:
@@ -111,12 +113,12 @@ class ChatState:
                 await sql_chat_messages.create(self.user.chat_id, assistant_message)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
-                    name=function_call.name,
+                    name=function_call['name'],
                     content=content,
                 ))
                 return None
             case Func.create_image:
-                raw_args = function_call.arguments
+                raw_args = function_call['arguments']
                 function_args = json.loads(raw_args)
                 description = function_args.get('description')
                 if not description:
@@ -125,7 +127,7 @@ class ChatState:
                 await sql_chat_messages.create(self.user.chat_id, assistant_message)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
-                    name=function_call.name,
+                    name=function_call['name'],
                     content=url,
                 ))
                 return URL(url)

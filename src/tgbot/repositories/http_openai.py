@@ -3,6 +3,7 @@ from typing import Literal
 
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
+from openai.types.chat.completion_create_params import Function
 from simple_settings import settings
 
 from tgbot.deps import openai_client
@@ -19,10 +20,10 @@ class Func(str, Enum):
 
 
 FUNCTIONS = [
-    {
-        'name': Func.bash,
-        'description': 'Execute any bash command in Debian buster, see output, store session',
-        'parameters': {
+    Function(
+        name=Func.bash,
+        description='Execute any bash command in Debian buster, see output, store session',
+        parameters={
             'type': 'object',
             'properties': {
                 'command': {
@@ -32,11 +33,11 @@ FUNCTIONS = [
             },
             'required': ['command'],
         },
-    },
-    {
-        'name': Func.web_search,
-        'description': 'Search on internet',
-        'parameters': {
+    ),
+    Function(
+        name=Func.web_search,
+        description='Search on internet',
+        parameters={
             'type': 'object',
             'properties': {
                 'quary': {
@@ -46,11 +47,11 @@ FUNCTIONS = [
             },
             'required': ['quary'],
         },
-    },
-    {
-        'name': Func.web_read,
-        'description': 'Open url and read it, return text as markdown',
-        'parameters': {
+    ),
+    Function(
+        name=Func.web_read,
+        description='Open url and read it, return text as markdown',
+        parameters={
             'type': 'object',
             'properties': {
                 'url': {
@@ -59,11 +60,11 @@ FUNCTIONS = [
             },
             'required': ['url'],
         },
-    },
-    {
-        'name': Func.create_image,
-        'description': 'Generate image by dall-e',
-        'parameters': {
+    ),
+    Function(
+        name=Func.create_image,
+        description='Generate image by dall-e',
+        parameters={
             'type': 'object',
             'properties': {
                 'description': {
@@ -73,7 +74,7 @@ FUNCTIONS = [
             },
             'required': ['description'],
         },
-    },
+    ),
 ]
 
 
