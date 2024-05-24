@@ -1,30 +1,22 @@
 import json
 import time
 
-from openai.types.chat.chat_completion_message_param import (
-    ChatCompletionMessageParam,
-    ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionFunctionMessageParam,
-)
-from openai.types.chat.chat_completion_assistant_message_param import FunctionCall
+from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
+from openai.types.chat.chat_completion_function_message_param import ChatCompletionFunctionMessageParam
+from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
+from openai.types.chat.chat_completion_user_message_param import ChatCompletionUserMessageParam
+from openai.types.chat.chat_completion_assistant_message_param import FunctionCall, ChatCompletionAssistantMessageParam
 
 from tgbot.deps import db
 
 
 async def create(chat_id: int, body: ChatCompletionMessageParam) -> None:
-    dict_body = dict(body)
-    if 'tool_calls' in dict_body:
-        del dict_body['tool_calls']
-    if dict_body.get('function_call'):
-        dict_body['function_call'] = dict(dict_body['function_call'])
     await db.get().execute(
         """
         INSERT INTO chat_messages (chat_id, body, created_at)
         VALUES ($1, $2, $3)
         """,
-        [chat_id, json.dumps(dict_body), int(time.time())],
+        [chat_id, json.dumps(body), int(time.time())],
     )
     await db.get().commit()
 
