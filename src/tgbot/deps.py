@@ -42,6 +42,7 @@ async def use_openai_client() -> AsyncIterator[AsyncOpenAI]:
             base_url=settings.OPENAI_BASE_URL,
             proxy=settings.PROXY,
             follow_redirects=True,
+            timeout=httpx.Timeout(timeout=60.0),
         )
     )
     openai_client.set(client)
