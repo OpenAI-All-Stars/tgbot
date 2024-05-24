@@ -2,6 +2,7 @@ SIMPLE_SETTINGS = {
     'OVERRIDE_BY_ENV': True,
 }
 
+OPENAI_BASE_URL = 'https://api.openai.com/v1'
 OPENAI_API_KEY = ''
 TG_TOKEN = ''
 SECRET_INVITE = ''
@@ -14,3 +15,5 @@ YANDEX_SEARCH_API_KEY = ''
 
 EXECUTOR_BASE_URL = ''
 TELEGRAM_BASE_URL = ''
+
+PROXY: str | None = None
