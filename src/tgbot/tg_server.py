@@ -10,6 +10,7 @@ from simple_settings import settings
 
 from tgbot.repositories import invite, sql_users
 from tgbot.servicecs import ai
+from tgbot.types import URL
 from tgbot.utils import tick_iterator
 
 HI_MSG = 'Добро пожаловать!'
@@ -77,6 +78,7 @@ async def send_typing(message: types.Message, stop: Event) -> None:
 async def send_answer(message: types.Message) -> None:
     assert message.from_user
     assert message.text
+    assert message.bot
     user = await sql_users.get(message.from_user.id)
     if not user:
         await message.answer(AUTH_MSG)
@@ -84,8 +86,13 @@ async def send_answer(message: types.Message) -> None:
 
     state = await ai.get_chat_state(message, user)
     answer = await state.send()
-
-    await message.answer(answer)
+    if isinstance(answer, URL):
+        await message.bot.send_photo(
+            message.chat.id,
+            answer,
+        )
+    else:
+        await message.answer(answer)
 
 
 async def run() -> None:

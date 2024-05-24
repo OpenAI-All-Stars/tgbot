@@ -3,3 +3,4 @@ __pycache__
 *.sqlite3
 .tox
 .mypy_cache
+src/tgbot/settings/dev.py

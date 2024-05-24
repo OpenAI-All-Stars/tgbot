@@ -4,13 +4,16 @@ from typing import AsyncIterator
 from aiohttp import ClientSession
 from aiosqlite import Connection
 import aiosqlite
+import httpx
 from simple_settings import settings
+from openai import AsyncOpenAI
 
 from tgbot.registry import RegistryValue
 
 
 db = RegistryValue[Connection]()
 http_client = RegistryValue[ClientSession]()
+openai_client = RegistryValue[AsyncOpenAI]()
 
 
 @asynccontextmanager
@@ -32,6 +35,23 @@ async def use_http_client() -> AsyncIterator[ClientSession]:
 
 
 @asynccontextmanager
+async def use_openai_client() -> AsyncIterator[AsyncOpenAI]:
+    client = AsyncOpenAI(
+        api_key=settings.OPENAI_API_KEY,
+        http_client=httpx.AsyncClient(
+            base_url=settings.OPENAI_BASE_URL,
+            proxy=settings.PROXY,
+            follow_redirects=True,
+        )
+    )
+    openai_client.set(client)
+    try:
+        yield client
+    finally:
+        await client.close()
+
+
+@asynccontextmanager
 async def use_all() -> AsyncIterator[None]:
-    async with (use_db(), use_http_client()):
+    async with (use_db(), use_http_client(), use_openai_client()):
         yield

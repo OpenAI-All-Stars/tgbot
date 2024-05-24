@@ -1,21 +1,35 @@
 import json
 import time
 
+from openai.types.chat.chat_completion_message_param import (
+    ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionFunctionMessageParam,
+)
+from openai.types.chat.chat_completion_assistant_message_param import FunctionCall
+
 from tgbot.deps import db
 
 
-async def create(chat_id: int, body: dict) -> None:
+async def create(chat_id: int, body: ChatCompletionMessageParam) -> None:
+    dict_body = dict(body)
+    if 'tool_calls' in dict_body:
+        del dict_body['tool_calls']
+    if dict_body.get('function_call'):
+        dict_body['function_call'] = dict(dict_body['function_call'])
     await db.get().execute(
         """
         INSERT INTO chat_messages (chat_id, body, created_at)
         VALUES ($1, $2, $3)
         """,
-        [chat_id, json.dumps(body), int(time.time())],
+        [chat_id, json.dumps(dict_body), int(time.time())],
     )
     await db.get().commit()
 
 
-async def get_last(chat_id: int, limit: int) -> list[dict]:
+async def get_last(chat_id: int, limit: int) -> list[ChatCompletionMessageParam]:
     q = db.get().execute(
         """
         SELECT body, created_at FROM chat_messages
@@ -29,6 +43,39 @@ async def get_last(chat_id: int, limit: int) -> list[dict]:
         rows = await cursor.fetchall()
     rows = sorted(rows, key=lambda x: x['created_at'])
     return [
-        json.loads(row['body'])
+        convert2type(json.loads(row['body']))
         for row in rows
     ]
+
+
+def convert2type(body: dict) -> ChatCompletionMessageParam:
+    match body['role']:
+        case 'system':
+            return ChatCompletionSystemMessageParam(
+                role=body['role'],
+                content=body['content'],
+            )
+        case 'user':
+            return ChatCompletionUserMessageParam(
+                role=body['role'],
+                content=body['content'],
+            )
+        case 'assistant':
+            function_call = body.get('function_call')
+            param = ChatCompletionAssistantMessageParam(
+                role=body['role'],
+                content=body.get('content'),
+            )
+            if function_call:
+                param['function_call'] = FunctionCall(
+                    arguments=function_call['arguments'],
+                    name=function_call['name'],
+                )
+            return param
+        case 'function':
+            return ChatCompletionFunctionMessageParam(
+                role=body['role'],
+                name=body['name'],
+                content=body.get('content'),
+            )
+    raise Exception('bad body: {}'.format(body))
