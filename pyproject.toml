@@ -9,7 +9,7 @@ readme = "README.md"
 tgbot = "tgbot.cli:cli"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 openai = "^1"
 aiogram = "^3.1.1"
 aiosqlite = "^0.19.0"
