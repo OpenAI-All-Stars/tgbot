@@ -7,6 +7,7 @@ import aiosqlite
 import httpx
 from simple_settings import settings
 from openai import AsyncOpenAI
+from statsd import StatsClient
 
 from tgbot.registry import RegistryValue
 
@@ -14,6 +15,7 @@ from tgbot.registry import RegistryValue
 db = RegistryValue[Connection]()
 http_client = RegistryValue[ClientSession]()
 openai_client = RegistryValue[AsyncOpenAI]()
+telemetry = RegistryValue[StatsClient]()
 
 
 @asynccontextmanager
@@ -53,6 +55,16 @@ async def use_openai_client() -> AsyncIterator[AsyncOpenAI]:
 
 
 @asynccontextmanager
+async def use_telemetry() -> AsyncIterator[StatsClient]:
+    c = StatsClient(host=settings.STATSD_HOST, prefix=settings.STATSD_PREFIX)
+    telemetry.set(c)
+    try:
+        yield c
+    finally:
+        c.close()
+
+
+@asynccontextmanager
 async def use_all() -> AsyncIterator[None]:
-    async with (use_db(), use_http_client(), use_openai_client()):
+    async with (use_db(), use_http_client(), use_openai_client(), use_telemetry()):
         yield
