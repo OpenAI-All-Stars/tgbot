@@ -2,6 +2,7 @@ services:
   tgbot:
     container_name: tgbot
     image: ghcr.io/openai-all-stars/tgbot:latest
+    network_mode: host
     volumes:
       - ~/data:/app/data
     environment:
