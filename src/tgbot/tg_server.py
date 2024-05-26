@@ -8,6 +8,7 @@ from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart
 from simple_settings import settings
 
+from tgbot.deps import telemetry
 from tgbot.repositories import invite, sql_users
 from tgbot.servicecs import ai
 from tgbot.types import URL
@@ -84,6 +85,7 @@ async def send_answer(message: types.Message) -> None:
         await message.answer(AUTH_MSG)
         return
 
+    telemetry.get().incr('messages')
     state = await ai.get_chat_state(message, user)
     answer = await state.send()
     if isinstance(answer, URL):
