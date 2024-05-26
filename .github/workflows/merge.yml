@@ -31,7 +31,6 @@ jobs:
             export SECRET_INVITE=${{ secrets.SECRET_INVITE }}
             export YANDEX_FOLDERID=${{ secrets.YANDEX_FOLDERID }}
             export YANDEX_SEARCH_API_KEY=${{ secrets.YANDEX_SEARCH_API_KEY }}
-            export STATSD_HOST=${{ secrets.STATSD_HOST }}
             cat docker-compose.yml | envsubst > docker-compose-secret.yml
         - name: copy docker compose config
           run: scp docker-compose-secret.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:docker-compose.yml
