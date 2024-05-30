@@ -20,3 +20,5 @@ PROXY: str | None = None
 
 STATSD_HOST = 'localhost'
 STATSD_PREFIX = 'openai-all-stars.tgbot'
+
+SENTRY_DSN = ''

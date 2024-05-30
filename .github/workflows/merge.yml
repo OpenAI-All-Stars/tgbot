@@ -24,14 +24,12 @@ jobs:
             install -m 600 -D /dev/null ~/.ssh/id_rsa
             echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
             ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+        - name: load secrets
+          uses: oNaiPs/secrets-to-env-action@v1.5
+          with:
+            secrets: ${{ toJSON(secrets) }}
         - name: create docker compose config
-          run: |
-            export TG_TOKEN=${{ secrets.TG_TOKEN }}
-            export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            export SECRET_INVITE=${{ secrets.SECRET_INVITE }}
-            export YANDEX_FOLDERID=${{ secrets.YANDEX_FOLDERID }}
-            export YANDEX_SEARCH_API_KEY=${{ secrets.YANDEX_SEARCH_API_KEY }}
-            cat docker-compose.yml | envsubst > docker-compose-secret.yml
+          run: cat docker-compose.yml | envsubst > docker-compose-secret.yml
         - name: copy docker compose config
           run: scp docker-compose-secret.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:docker-compose.yml
         - name: connect and pull

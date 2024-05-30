@@ -108,7 +108,7 @@ class ChatState:
                 url = function_args.get('url')
                 if not url:
                     raise ArgRequired('web_read', 'url')
-                await self.message.answer('открываю {}'.format(url))
+                await self.message.answer('открываю {}'.format(repr(url)))
                 content = await http_text_browser.read(url)
                 await sql_chat_messages.create(self.user.chat_id, assistant_message)
                 self.messages.append(ChatCompletionFunctionMessageParam(
