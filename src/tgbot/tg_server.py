@@ -89,6 +89,7 @@ async def send_answer(message: types.Message) -> None:
 
     if message.voice:
         file_params = await message.bot.get_file(message.voice.file_id)
+        assert file_params.file_path
         file_data = io.BytesIO()
         try:
             await message.bot.download_file(file_params.file_path, file_data)
