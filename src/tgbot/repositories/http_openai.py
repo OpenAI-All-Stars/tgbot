@@ -1,4 +1,5 @@
 from enum import Enum
+import io
 from typing import Literal
 
 from openai.types.chat.chat_completion import ChatCompletion
@@ -99,3 +100,12 @@ async def generate_image(promt: str, size: SizeType | None = None) -> str | None
         n=1,
     )
     return response.data[0].url
+
+
+async def auodo2text(audio_file: io.BytesIO) -> str:
+    client = openai_client.get()
+    transcription = await client.audio.transcriptions.create(
+        file=audio_file,
+        model='whisper-1',
+    )
+    return transcription.text

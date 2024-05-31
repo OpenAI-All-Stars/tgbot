@@ -1,5 +1,6 @@
 import asyncio
 from asyncio import Event
+import io
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -9,7 +10,7 @@ from aiogram.filters import CommandStart
 from simple_settings import settings
 
 from tgbot.deps import telemetry
-from tgbot.repositories import invite, sql_users
+from tgbot.repositories import http_openai, invite, sql_users
 from tgbot.servicecs import ai
 from tgbot.types import URL
 from tgbot.utils import tick_iterator
@@ -56,12 +57,12 @@ async def cmd_start(message: types.Message) -> None:
 
 @dp.message()
 async def main_handler(message: types.Message) -> None:
-    if message.text is None or message.from_user is None:
+    if message.from_user is None:
         return None
 
     stop = Event()
-    asyncio.create_task(send_typing(message, stop))
     try:
+        asyncio.create_task(send_typing(message, stop))
         await send_answer(message)
     finally:
         stop.set()
@@ -78,7 +79,6 @@ async def send_typing(message: types.Message, stop: Event) -> None:
 
 async def send_answer(message: types.Message) -> None:
     assert message.from_user
-    assert message.text
     assert message.bot
     user = await sql_users.get(message.from_user.id)
     if not user:
@@ -86,8 +86,24 @@ async def send_answer(message: types.Message) -> None:
         return
 
     telemetry.get().incr('messages')
+
+    if message.voice:
+        file_params = await message.bot.get_file(message.voice.file_id)
+        assert file_params.file_path
+        file_data = io.BytesIO()
+        try:
+            await message.bot.download_file(file_params.file_path, file_data)
+            file_data.name = 'voice.ogg'
+            requeset_text = await http_openai.auodo2text(file_data)
+        finally:
+            file_data.close()
+    elif message.text:
+        requeset_text = message.text
+    else:
+        return
+
     state = await ai.get_chat_state(message, user)
-    answer = await state.send()
+    answer = await state.send(requeset_text)
     if isinstance(answer, URL):
         await message.bot.send_photo(
             message.chat.id,
