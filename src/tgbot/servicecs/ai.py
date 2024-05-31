@@ -24,9 +24,8 @@ class ChatState:
         self.user = user
         self.messages = messages
 
-    async def send(self) -> str:
-        assert self.message.text is not None
-        new_message = ChatCompletionUserMessageParam(role='user', content=self.message.text)
+    async def send(self, text: str) -> str:
+        new_message = ChatCompletionUserMessageParam(role='user', content=text)
         self.messages.append(new_message)
         try:
             for _ in range(100):
