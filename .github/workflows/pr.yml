@@ -37,3 +37,43 @@ jobs:
           run: pip install tox
         - name: Run tests
           run: tox
+
+    deploy:
+        name: Deploy
+        runs-on: ubuntu-latest
+
+        steps:
+        - uses: trstringer/manual-approval@v1
+          with:
+            secret: ${{ github.TOKEN }}
+            approvers: devops
+            minimum-approvals: 1
+            issue-title: "Deploying to prod from staging"
+            issue-body: "Please approve or deny the deployment."
+            exclude-workflow-initiator-as-approver: false
+            additional-approved-words: ''
+            additional-denied-words: ''
+        - uses: actions/checkout@v4
+        - name: install ssh keys
+          # check this thread to understand why its needed:
+          # <https://stackoverflow.com/a/70447517>
+          run: |
+            install -m 600 -D /dev/null ~/.ssh/id_rsa
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+            ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+        - name: load secrets
+          uses: oNaiPs/secrets-to-env-action@v1.5
+          with:
+            secrets: ${{ toJSON(secrets) }}
+        - name: create docker compose config
+          run: cat docker-compose.yml | envsubst > docker-compose-secret.yml
+        - name: copy docker compose config
+          run: scp docker-compose-secret.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:docker-compose.yml
+        - name: connect and pull
+          run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "docker-compose pull && docker-compose up -d && exit"
+        - name: cleanup config
+          if: always()
+          run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "rm docker-compose.yml"
+        - name: cleanup keys
+          if: always()
+          run: rm -rf ~/.ssh docker-compose-secret.yml
