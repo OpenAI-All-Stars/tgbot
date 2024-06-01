@@ -1,3 +1,4 @@
+
 from .base import *  # noqa
 
 
@@ -8,4 +9,4 @@ TELEGRAM_BASE_URL = 'https://api.telegram.org'
 YANDEX_FOLDERID = 'b1g1ro7n62kf9att9j8t'
 YANDEX_SEARCH_URL = 'https://yandex.ru/search/xml'
 
-STATSD_HOST = HOST_INTERNAL
+STATSD_HOST = HOST_INTERNAL  # noqa
