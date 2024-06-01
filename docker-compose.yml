@@ -2,11 +2,10 @@ services:
   tgbot:
     container_name: tgbot
     image: ghcr.io/openai-all-stars/tgbot:latest
-    environment:
-      - HOST_INTERNAL=host.docker.internal
     volumes:
       - ~/data:/app/data
     environment:
+      - HOST_INTERNAL=host.docker.internal
       - OPENAI_API_KEY=$OPENAI_API_KEY
       - TG_TOKEN=$TG_TOKEN
       - SECRET_INVITE=$SECRET_INVITE
