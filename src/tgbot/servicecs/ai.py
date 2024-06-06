@@ -38,18 +38,17 @@ class ChatState:
                 name=e.func_name,
                 content=e.message,
             ))
+            await sql_chat_messages.create(self.user.chat_id, self.messages[-1])
         except Exception as e:
             logger.exception(e)
             self.messages.append(ChatCompletionSystemMessageParam(
                 role='system',
                 content='неизвестная ошибка',
             ))
+            await sql_chat_messages.create(self.user.chat_id, self.messages[-1])
         return 'ошибка, попробуйте другой запрос'
 
     async def _send_messages(self) -> str | None:
-        """
-        Странный порядок сохранения сообщений в бд нужно для инорирования ошибочных сообщений.
-        """
         resp = await http_openai.send(str(self.user.chat_id), self.messages)
         assistant_message = ChatCompletionAssistantMessageParam(
             role=resp.choices[0].message.role,
@@ -66,9 +65,9 @@ class ChatState:
         function_call = assistant_message.get('function_call')
         if not function_call:
             answer = assistant_message.get('content') or ''
-            await sql_chat_messages.create(self.user.chat_id, assistant_message)
             return answer
         self.messages.append(assistant_message)
+        await sql_chat_messages.create(self.user.chat_id, self.messages[-1])
 
         match function_call['name']:
             case Func.bash:
@@ -79,7 +78,6 @@ class ChatState:
                     raise ArgRequired('bash', 'command')
                 await self.message.answer('исполняю команду bash..\n```{}```'.format(command))
                 stdout = await bash.execute(command)
-                await sql_chat_messages.create(self.user.chat_id, assistant_message)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
                     name=function_call['name'],
@@ -94,7 +92,6 @@ class ChatState:
                     raise ArgRequired('web_search', 'quary')
                 await self.message.answer('ищу в интернете..\n{}'.format(quary))
                 content = await http_yandex_search.search(quary)
-                await sql_chat_messages.create(self.user.chat_id, assistant_message)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
                     name=function_call['name'],
@@ -109,7 +106,6 @@ class ChatState:
                     raise ArgRequired('web_read', 'url')
                 await self.message.answer('открываю `{}`'.format(url))
                 content = await http_text_browser.read(url)
-                await sql_chat_messages.create(self.user.chat_id, assistant_message)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
                     name=function_call['name'],
@@ -123,7 +119,6 @@ class ChatState:
                 if not description:
                     raise ArgRequired('create_image', 'description')
                 url = await http_openai.generate_image(description)
-                await sql_chat_messages.create(self.user.chat_id, assistant_message)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
                     name=function_call['name'],
