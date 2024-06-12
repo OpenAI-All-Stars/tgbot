@@ -1,6 +1,7 @@
 import asyncio
 from asyncio import Event
 import io
+from typing import Iterator
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -110,7 +111,8 @@ async def send_answer(message: types.Message) -> None:
             answer,
         )
     else:
-        await message.answer(answer)
+        for part in _split_answer(answer):
+            await message.answer(part)
 
 
 async def run() -> None:
@@ -122,3 +124,38 @@ async def run() -> None:
         ),
     )
     await dp.start_polling(bot)
+
+
+def _split_answer(answer: str) -> Iterator[str]:
+    MAX_LEN = 4096
+    while True:
+        if len(answer) < MAX_LEN:
+            break
+        part, answer = _get_part(answer, MAX_LEN)
+        yield part
+    if answer:
+        part, _ = _get_part(answer, MAX_LEN)
+        yield part
+
+
+def _get_part(answer: str, max_len: int) -> tuple[str, str]:
+    part = answer[:max_len]
+    answer = answer[max_len:]
+    while True:
+        counts = {
+            '_': 0,
+            '*': 0,
+            '`': 0,
+        }
+        for c in part:
+            if c in counts:
+                counts[c] += 1
+        need_continue = False
+        for k, v in counts.items():
+            if v % 2 != 0:
+                answer = part[-1] + answer
+                part = part[:-1]
+                need_continue = True
+        if not need_continue:
+            break
+    return part, answer
