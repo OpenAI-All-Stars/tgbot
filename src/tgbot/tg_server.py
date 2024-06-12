@@ -111,7 +111,8 @@ async def send_answer(message: types.Message) -> None:
             answer,
         )
     else:
-        await message.answer(answer)
+        for part in _split_answer(answer):
+            await message.answer(part)
 
 
 async def run() -> None:
