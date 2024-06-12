@@ -118,7 +118,10 @@ class ChatState:
                 description = function_args.get('description')
                 if not description:
                     raise ArgRequired('create_image', 'description')
-                url = await http_openai.generate_image(description)
+                size = function_args.get('size')
+                if not size:
+                    raise ArgRequired('create_image', 'size')
+                url = await http_openai.generate_image(description, size)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
                     name=function_call['name'],

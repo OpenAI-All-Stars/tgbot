@@ -72,8 +72,13 @@ FUNCTIONS = [
                     'type': 'string',
                     'description': 'Image promt',
                 },
+                'size': {
+                    'type': 'string',
+                    'description': 'Image size',
+                    'enum': ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"]
+                },
             },
-            'required': ['description'],
+            'required': ['description', 'size'],
         },
     ),
 ]
