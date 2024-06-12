@@ -129,8 +129,6 @@ async def run() -> None:
 def _split_answer(answer: str) -> Iterator[str]:
     MAX_LEN = 4096
     while answer:
-        if len(answer) <= MAX_LEN:
-            break
         part = answer[:MAX_LEN]
         answer = answer[MAX_LEN:]
         yield part
