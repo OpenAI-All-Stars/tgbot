@@ -7,6 +7,7 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart, Command
+from aiogram.types import BotCommand
 from simple_settings import settings
 
 from tgbot.deps import telemetry
@@ -57,7 +58,7 @@ async def cmd_start(message: types.Message) -> None:
 
 @dp.message(Command('clean'))
 async def cmd_clean(message: types.Message) -> None:
-    sql_chat_messages.clean(message.chat.id)
+    await sql_chat_messages.clean(message.chat.id)
     await message.answer('Контекст очищен')
 
 
@@ -127,4 +128,7 @@ async def run() -> None:
             api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
         ),
     )
+    await bot.set_my_commands(commands=[
+        BotCommand(command='/clean', description='Очистить контекст'),
+    ])
     await dp.start_polling(bot)
