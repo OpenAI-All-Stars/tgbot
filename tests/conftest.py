@@ -36,10 +36,16 @@ async def _server(settings, mock_server) -> str:
             },
         },
     )
+    set_commands_mock = mock_server.add_request_mock(
+        'POST', f'/bot{settings.TG_TOKEN}/setMyCommands',
+        response_json={
+            'ok': True,
+        }
+    )
 
     p = subprocess.Popen(['tgbot', 'server'])
     try:
-        if await get_me_mock.wait():
+        if await get_me_mock.wait() and await set_commands_mock.wait():
             yield
     finally:
         p.kill()
