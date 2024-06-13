@@ -40,6 +40,16 @@ async def get_last(chat_id: int, limit: int) -> list[ChatCompletionMessageParam]
     ]
 
 
+async def clean(chat_id: int) -> None:
+    await db.get().execute(
+        """
+        DELETE FROM chat_messages WHERE chat_id = $1
+        """,
+        [chat_id],
+    )
+    await db.get().commit()
+
+
 def convert2type(body: dict) -> ChatCompletionMessageParam:
     match body['role']:
         case 'system':
