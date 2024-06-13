@@ -6,11 +6,11 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from simple_settings import settings
 
 from tgbot.deps import telemetry
-from tgbot.repositories import http_openai, invite, sql_users
+from tgbot.repositories import http_openai, invite, sql_chat_messages, sql_users
 from tgbot.servicecs import ai
 from tgbot.types import URL
 from tgbot.utils import tick_iterator
@@ -53,6 +53,12 @@ async def cmd_start(message: types.Message) -> None:
         message.from_user.username or '',
     )
     await message.answer(HI_MSG)
+
+
+@dp.message(Command('clean'))
+async def cmd_clean(message: types.Message) -> None:
+    sql_chat_messages.clean(message.chat.id)
+    await message.answer('Контекст очищен')
 
 
 @dp.message()
