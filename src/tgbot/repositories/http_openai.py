@@ -125,9 +125,8 @@ async def auodo2text(audio_file: io.BytesIO) -> str:
 def _resize(url: str) -> io.BytesIO:
     r = httpx.get(url)
     r.raise_for_status()
-    image = Image.open(io.BytesIO(r.conetnt))  # type: ignore
+    image = Image.open(io.BytesIO(r.content))
     image.thumbnail((1024, 1024))
     byte_arr = io.BytesIO()
     image.save(byte_arr, format='JPEG')
-    image.save(f'{settings.HLS_DIR}/new_bg.jpg')
     return byte_arr
