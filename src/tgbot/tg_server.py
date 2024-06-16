@@ -7,13 +7,12 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart, Command
-from aiogram.types import BotCommand
+from aiogram.types import BotCommand, BufferedInputFile
 from simple_settings import settings
 
 from tgbot.deps import telemetry
 from tgbot.repositories import http_openai, invite, sql_chat_messages, sql_users
 from tgbot.servicecs import ai
-from tgbot.types import URL
 from tgbot.utils import tick_iterator
 
 HI_MSG = 'Добро пожаловать!'
@@ -111,12 +110,12 @@ async def send_answer(message: types.Message) -> None:
 
     state = await ai.get_chat_state(message, user)
     answer = await state.send(requeset_text)
-    if isinstance(answer, URL):
+    if isinstance(answer, bytes):
         await message.bot.send_photo(
             message.chat.id,
-            answer,
+            BufferedInputFile(answer, 'answer.jpg'),
         )
-    else:
+    elif isinstance(answer, str):
         await message.answer(answer)
 
 

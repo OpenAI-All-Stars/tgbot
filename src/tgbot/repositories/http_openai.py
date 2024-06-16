@@ -1,10 +1,13 @@
+import asyncio
 from enum import Enum
 import io
 from typing import Literal
 
+import httpx
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.completion_create_params import Function
+from PIL import Image
 from simple_settings import settings
 
 from tgbot.deps import openai_client
@@ -95,7 +98,7 @@ async def send(user: str, messages: list[ChatCompletionMessageParam]) -> ChatCom
     )
 
 
-async def generate_image(promt: str, size: SizeType | None = None) -> str | None:
+async def generate_image(promt: str, size: SizeType | None = None) -> tuple[str, bytes]:
     client = openai_client.get()
     response = await client.images.generate(
         model='dall-e-3',
@@ -104,7 +107,10 @@ async def generate_image(promt: str, size: SizeType | None = None) -> str | None
         quality='standard',
         n=1,
     )
-    return response.data[0].url
+    url = response.data[0].url
+    assert url
+    data = await asyncio.get_running_loop().run_in_executor(None, _resize, url)
+    return url, data.getvalue()
 
 
 async def auodo2text(audio_file: io.BytesIO) -> str:
@@ -114,3 +120,13 @@ async def auodo2text(audio_file: io.BytesIO) -> str:
         model='whisper-1',
     )
     return transcription.text
+
+
+def _resize(url: str) -> io.BytesIO:
+    r = httpx.get(url)
+    r.raise_for_status()
+    image = Image.open(io.BytesIO(r.content))
+    image.thumbnail((1024, 1024))
+    byte_arr = io.BytesIO()
+    image.save(byte_arr, format='JPEG')
+    return byte_arr

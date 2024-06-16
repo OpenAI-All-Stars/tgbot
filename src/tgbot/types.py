@@ -1,2 +1,0 @@
-class URL(str):
-    pass
