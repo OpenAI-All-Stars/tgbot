@@ -123,10 +123,9 @@ async def auodo2text(audio_file: io.BytesIO) -> str:
 
 
 def _resize(url: str) -> io.BytesIO:
-    with httpx.Client() as client:
-        response = client.get(url)
-        response.raise_for_status()
-    image = Image.open(io.BytesIO(response.conetnt))
+    r = httpx.get(url)
+    r.raise_for_status()
+    image = Image.open(io.BytesIO(r.conetnt))  # type: ignore
     image.thumbnail((1024, 1024))
     byte_arr = io.BytesIO()
     image.save(byte_arr, format='JPEG')

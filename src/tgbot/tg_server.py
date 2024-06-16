@@ -115,7 +115,7 @@ async def send_answer(message: types.Message) -> None:
             message.chat.id,
             BufferedInputFile(answer, 'answer.jpg'),
         )
-    else:
+    elif isinstance(answer, str):
         await message.answer(answer)
 
 

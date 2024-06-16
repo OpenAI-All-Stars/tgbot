@@ -23,7 +23,7 @@ class ChatState:
         self.user = user
         self.messages = messages
 
-    async def send(self, text: str) -> str:
+    async def send(self, text: str) -> bytes | str:
         new_message = ChatCompletionUserMessageParam(role='user', content=text)
         self.messages.append(new_message)
         try:
@@ -47,7 +47,7 @@ class ChatState:
             await sql_chat_messages.create(self.user.chat_id, self.messages[-1])
         return 'ошибка, попробуйте другой запрос'
 
-    async def _send_messages(self) -> str | None:
+    async def _send_messages(self) -> bytes | str | None:
         resp = await http_openai.send(str(self.user.chat_id), self.messages)
         assistant_message = ChatCompletionAssistantMessageParam(
             role=resp.choices[0].message.role,
