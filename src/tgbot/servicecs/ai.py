@@ -12,7 +12,6 @@ from tgbot.clients import http_yandex_search
 from tgbot.entities.user import User
 from tgbot.repositories import bash, http_openai, http_text_browser, sql_chat_messages
 from tgbot.repositories.http_openai import Func
-from tgbot.types import URL
 
 
 logger = logging.getLogger(__name__)
@@ -121,13 +120,13 @@ class ChatState:
                 size = function_args.get('size')
                 if not size:
                     raise ArgRequired('create_image', 'size')
-                url = await http_openai.generate_image(description, size)
+                url, data = await http_openai.generate_image(description, size)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
                     name=function_call['name'],
                     content=url,
                 ))
-                return URL(url)
+                return data
             case _:
                 raise FuncUnknow(function_call['name'])
 
