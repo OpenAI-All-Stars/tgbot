@@ -27,13 +27,9 @@ jobs:
 
       steps:
       - uses: actions/checkout@v4
-      - name: install ssh keys
-        # check this thread to understand why its needed:
-        # <https://stackoverflow.com/a/70447517>
-        run: |
-          install -m 600 -D /dev/null ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+      - run: install -m 600 -D /dev/null ~/.ssh/id_rsa
+      - run: echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+      - run: ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
       - name: load secrets
         uses: oNaiPs/secrets-to-env-action@v1.5
         with:
