@@ -2,7 +2,6 @@
 
 - name: Deploy service
   hosts: web
-  become: true
   vars:
     service_name: tgbot
     env_path: "{{ env_path_full.stdout }}"
@@ -11,10 +10,6 @@
       package:
         name: python3.12-full
         update_cache: true
-  
-    - name: Install ffmpeg
-      package:
-        name: ffmpeg
   
     - name: Install git
       package:
@@ -40,11 +35,6 @@
       command:
         chdir: "/var/lib/{{ service_name }}"
         cmd: poetry env use python3.12
-  
-    - name: Poetry lock
-      command:
-        chdir: "/var/lib/{{ service_name }}"
-        cmd: poetry lock
 
     - name: Poetry install
       command:
