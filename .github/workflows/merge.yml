@@ -28,15 +28,13 @@ jobs:
           uses: oNaiPs/secrets-to-env-action@v1.5
           with:
             secrets: ${{ toJSON(secrets) }}
-        - name: create docker compose config
-          run: cat docker-compose.yml | envsubst > docker-compose-secret.yml
-        - name: copy docker compose config
-          run: scp docker-compose-secret.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:docker-compose.yml
-        - name: connect and pull
-          run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "docker-compose pull && docker-compose up -d && exit"
-        - name: cleanup config
-          if: always()
-          run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "rm docker-compose.yml"
-        - name: cleanup keys
-          if: always()
-          run: rm -rf ~/.ssh docker-compose-secret.yml
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: 3.x
+        - name: Install Ansible
+          run: |
+            python -m pip install --upgrade pip
+            pip install ansible
+        - name: Run Ansible Playbook
+          run: ansible-playbook deploy/install.yml

@@ -1,9 +1,0 @@
-.idea
-__pycache__
-*.sqlite3
-.tox
-.mypy_cache
-.git*
-docker-compose.yml
-.github
-.venv
