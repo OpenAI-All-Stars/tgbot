@@ -35,11 +35,6 @@
       command:
         chdir: "/var/lib/{{ service_name }}"
         cmd: poetry env use python3.12
-  
-    - name: Poetry lock
-      command:
-        chdir: "/var/lib/{{ service_name }}"
-        cmd: poetry lock
 
     - name: Poetry install
       command:
