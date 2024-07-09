@@ -1,0 +1,80 @@
+---
+
+- name: Deploy service
+  hosts: web
+  become: true
+  vars:
+    service_name: tgbot
+    env_path: "{{ env_path_full.stdout }}"
+  tasks:
+    - name: Install python
+      package:
+        name: python3.12-full
+        update_cache: true
+  
+    - name: Install ffmpeg
+      package:
+        name: ffmpeg
+  
+    - name: Install git
+      package:
+        name: git
+  
+    - name: Install pip
+      package:
+        name: python3-pip
+
+    # need copy to root ssh and press yes when connect (need fix it)
+    - name: Copy src
+      git:
+        repo: "git@github.com:OpenAI-All-Stars/{{ service_name }}.git"
+        dest: "/var/lib/{{ service_name }}"
+        force: true
+ 
+    - name: Install poetry
+      pip:
+        break_system_packages: true
+        name: poetry
+
+    - name: Create env
+      command:
+        chdir: "/var/lib/{{ service_name }}"
+        cmd: poetry env use python3.12
+  
+    - name: Poetry lock
+      command:
+        chdir: "/var/lib/{{ service_name }}"
+        cmd: poetry lock
+
+    - name: Poetry install
+      command:
+        chdir: "/var/lib/{{ service_name }}"
+        cmd: poetry install --only main
+
+    - name: Get env path
+      command:
+        chdir: "/var/lib/{{ service_name }}"
+        cmd: poetry env info -p
+      register: env_path_full
+
+    - name: Create systemd file
+      template:
+        src: system.service.j2
+        dest: "/etc/systemd/system/{{ service_name }}.service"
+        mode: 644
+      vars:
+        name: "{{ service_name }}"
+        exec: "{{ env_path }}/bin/{{ service_name }} server"
+        extra_env_vars:
+          - OPENAI_API_KEY
+          - TG_TOKEN
+          - SECRET_INVITE
+          - YANDEX_FOLDERID
+          - YANDEX_SEARCH_API_KEY
+          - SENTRY_DSN
+
+    - name: Restart service
+      service:
+        name: "{{ service_name }}.service"
+        state: restarted
+        daemon_reload: true
