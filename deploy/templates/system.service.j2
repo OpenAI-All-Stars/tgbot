@@ -7,8 +7,7 @@ After=syslog.target network.target
 Type=simple
 WorkingDirectory=/var/lib/{{ name }}
 Environment=SIMPLE_SETTINGS={{ name }}.settings.prod
-Environment=HOST_INTERNAL=host.docker.internal
-Environment=SQLITE_PATH=/app/data/db.sqlite3
+Environment=SQLITE_PATH=db.sqlite3
 {% for env_var in extra_env_vars %}
 Environment={{ env_var }}={{ lookup('env', env_var) }}
 {% endfor %}

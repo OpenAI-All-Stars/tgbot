@@ -11,10 +11,6 @@
         name: python3.12-full
         update_cache: true
   
-    - name: Install ffmpeg
-      package:
-        name: ffmpeg
-  
     - name: Install git
       package:
         name: git
