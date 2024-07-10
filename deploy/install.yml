@@ -19,12 +19,12 @@
       package:
         name: python3-pip
 
-    # need copy to root ssh and press yes when connect (need fix it)
-    - name: Copy src
-      git:
-        repo: "git@github.com:OpenAI-All-Stars/{{ service_name }}.git"
+    - name: Synchronize src
+      synchronize:
+        src: .
         dest: "/var/lib/{{ service_name }}"
-        force: true
+        delete: yes
+        recursive: yes
  
     - name: Install poetry
       pip:
