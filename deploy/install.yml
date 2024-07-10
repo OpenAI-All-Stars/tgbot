@@ -23,9 +23,9 @@
       package:
         name: rsync
 
-    - name: Synchronize src
+    - name: Synchronize files
       synchronize:
-        src: "."
+        src: "{{ GITHUB_WORKSPACE }}"
         dest: "/var/lib/{{ service_name }}"
         delete: yes
         recursive: yes
