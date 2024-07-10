@@ -13,18 +13,22 @@ from urllib.parse import parse_qs
 from aiohttp import web
 import aiohttp
 import pytest
+import docker
+import asyncpg
+from asyncpg import CannotConnectNowError
 
 
 @pytest.fixture(scope='session')
-def app_env(mock_server_url):
+def app_env(mock_server_url, postgres_dsn):
     return {
         'SIMPLE_SETTINGS': 'tgbot.settings.test',
         'TELEGRAM_BASE_URL': mock_server_url,
+        'POSTGRES_DSN': postgres_dsn,
     }
 
 
-@pytest.fixture(autouse=True)
-async def _server(settings, mock_server) -> str:
+@pytest.fixture(autouse=True, scope='session')
+async def _server(settings, mock_server, create_db):
     get_me_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getMe',
         response_json={
@@ -49,6 +53,11 @@ async def _server(settings, mock_server) -> str:
             yield
     finally:
         p.kill()
+
+
+@pytest.fixture(scope='session')
+def create_db(settings):
+    subprocess.run(['tgbot', 'create-db'])
 
 
 @pytest.fixture(scope='session')
@@ -193,7 +202,7 @@ def healthcheck() -> bool:
     return _check
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def event_loop():
     policy = asyncio.get_event_loop_policy()
     loop = policy.new_event_loop()
@@ -209,3 +218,52 @@ def settings(app_env) -> dict:
     from simple_settings import settings
 
     return settings
+
+
+@pytest.fixture(scope='session')
+def postgres_dsn(get_free_port):
+    client = docker.from_env()
+
+    # Pull the PostgreSQL image
+    client.images.pull('postgres:latest')
+
+    try:
+        existing_container = client.containers.get('test_postgres')
+        existing_container.remove(force=True)
+    except docker.errors.NotFound:
+        pass
+
+    port = get_free_port()
+    container = client.containers.run(
+        'postgres:latest',
+        name='test_postgres',
+        environment={
+            'POSTGRES_USER': 'testuser',
+            'POSTGRES_PASSWORD': 'testpassword',
+            'POSTGRES_DB': 'testdb'
+        },
+        ports={'5432': port},
+        detach=True
+    )
+
+    # Check if PostgreSQL is ready
+    dsn = f'postgresql://testuser:testpassword@localhost:{port}/testdb'
+    async def check_postgres():
+        for _ in range(30):  # Try for up to 30 seconds
+            try:
+                conn = await asyncpg.connect(dsn)
+                await conn.close()
+                break
+            except (ConnectionResetError, CannotConnectNowError):
+                await asyncio.sleep(1)
+        else:
+            raise TimeoutError('Failed to connect to PostgreSQL')
+
+    asyncio.run(check_postgres())
+
+    try:
+        yield dsn
+    finally:
+        container.stop()
+        container.remove()
+        client.close()

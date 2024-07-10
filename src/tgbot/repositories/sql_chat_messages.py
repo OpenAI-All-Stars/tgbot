@@ -16,27 +16,23 @@ async def create(chat_id: int, body: ChatCompletionMessageParam) -> None:
         INSERT INTO chat_messages (chat_id, body, created_at)
         VALUES ($1, $2, $3)
         """,
-        [chat_id, json.dumps(body), int(time.time())],
+        chat_id, json.dumps(body), int(time.time()),
     )
-    await db.get().commit()
 
 
 async def get_last(chat_id: int, limit: int) -> list[ChatCompletionMessageParam]:
-    q = db.get().execute(
+    rows = await db.get().fetch(
         """
         SELECT body, created_at FROM chat_messages
         WHERE chat_id = $1
         ORDER BY created_at DESC
         LIMIT $2
         """,
-        [chat_id, limit],
+        chat_id, limit,
     )
-    async with q as cursor:
-        rows = await cursor.fetchall()
-    rows = sorted(rows, key=lambda x: x['created_at'])
     return [
         convert2type(json.loads(row['body']))
-        for row in rows
+        for row in reversed(rows)
     ]
 
 
@@ -45,9 +41,8 @@ async def clean(chat_id: int) -> None:
         """
         DELETE FROM chat_messages WHERE chat_id = $1
         """,
-        [chat_id],
+        chat_id,
     )
-    await db.get().commit()
 
 
 def convert2type(body: dict) -> ChatCompletionMessageParam:
