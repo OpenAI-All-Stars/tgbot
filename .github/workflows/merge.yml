@@ -38,3 +38,5 @@ jobs:
             pip install ansible
         - name: Run Ansible Playbook
           run: ansible-playbook deploy/install.yml
+          env:
+            GITHUB_WORKSPACE: ${{ github.workspace }}

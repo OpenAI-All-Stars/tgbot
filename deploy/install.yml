@@ -19,12 +19,18 @@
       package:
         name: python3-pip
 
-    # need copy to root ssh and press yes when connect (need fix it)
-    - name: Copy src
-      git:
-        repo: "git@github.com:OpenAI-All-Stars/{{ service_name }}.git"
+    - name: Install rsync
+      package:
+        name: rsync
+
+    - name: Synchronize files
+      synchronize:
+        src: "{{ lookup('env', 'GITHUB_WORKSPACE') }}/"
         dest: "/var/lib/{{ service_name }}"
-        force: true
+        delete: yes
+        recursive: yes
+        rsync_opts:
+          - "--exclude='.git/'"
  
     - name: Install poetry
       pip:
@@ -46,6 +52,14 @@
         chdir: "/var/lib/{{ service_name }}"
         cmd: poetry env info -p
       register: env_path_full
+
+    - name: Migrate
+      command:
+        chdir: "/var/lib/{{ service_name }}"
+        cmd: "{{ env_path }}/bin/{{ service_name }} migrate"
+      environment:
+        SIMPLE_SETTINGS: "{{ service_name }}.settings.prod"
+        POSTGRES_DSN: "{{ lookup('env', 'POSTGRES_DSN') }}"
 
     - name: Create systemd file
       template:
