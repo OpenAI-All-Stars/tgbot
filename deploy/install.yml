@@ -51,6 +51,8 @@
       command:
         chdir: "/var/lib/{{ service_name }}"
         cmd: "{{ env_path }}/bin/{{ service_name }} migrate"
+      environment:
+        SIMPLE_SETTINGS: "{{ service_name }}.settings.prod"
 
     - name: Create systemd file
       template:
