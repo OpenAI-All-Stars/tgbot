@@ -29,6 +29,8 @@
         dest: "/var/lib/{{ service_name }}"
         delete: yes
         recursive: yes
+        rsync_opts:
+          - "--exclude='.git/'"
  
     - name: Install poetry
       pip:
@@ -57,6 +59,7 @@
         cmd: "{{ env_path }}/bin/{{ service_name }} migrate"
       environment:
         SIMPLE_SETTINGS: "{{ service_name }}.settings.prod"
+        POSTGRES_DSN: "{{ lookup('env', 'POSTGRES_DSN') }}"
 
     - name: Create systemd file
       template:
