@@ -19,9 +19,13 @@
       package:
         name: python3-pip
 
+    - name: Install rsync
+      package:
+        name: rsync
+
     - name: Synchronize src
       synchronize:
-        src: .
+        src: "."
         dest: "/var/lib/{{ service_name }}"
         delete: yes
         recursive: yes
