@@ -8,49 +8,38 @@ async def create(user_id: int, chat_id: int, code: str, full_name: str, username
         INSERT INTO users (user_id, chat_id, invite_code, full_name, username)
         VALUES ($1, $2, $3, $4, $5)
         """,
-        [user_id, chat_id, code, full_name, username],
+        user_id, chat_id, code, full_name, username,
     )
-    await db.get().commit()
 
 
 async def exists(user_id: int) -> bool:
-    cursor = await db.get().execute(
+    return await db.get().fetchval(
         """
         SELECT COUNT(*) AS cnt FROM users
         WHERE user_id = $1
         """,
-        [user_id],
-    )
-    row = await cursor.fetchone()
-    await cursor.close()
-    return row is not None and row['cnt'] > 0
+        user_id,
+    ) > 0
 
 
 async def exists_code(code: str) -> bool:
-    cursor = await db.get().execute(
+    return await db.get().fetchval(
         """
-        SELECT COUNT(*) AS cnt FROM users
+        SELECT COUNT(*) FROM users
         WHERE invite_code = $1
         """,
-        [code],
-    )
-    row = await cursor.fetchone()
-    await cursor.close()
-    return row is not None and row['cnt'] > 0
+        code,
+    ) > 0
 
 
 async def get(user_id: int) -> User | None:
-    cursor = await db.get().execute(
+    row = await db.get().fetchrow(
         """
         SELECT * FROM users
         WHERE user_id = $1
         """,
-        [user_id],
+        user_id,
     )
-    row = await cursor.fetchone()
-    if not row:
-        return None
-    await cursor.close()
     return User(
         user_id=row['user_id'],
         chat_id=row['chat_id'],

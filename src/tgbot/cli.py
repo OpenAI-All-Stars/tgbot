@@ -37,7 +37,6 @@ async def create_db() -> None:
 @async_command
 async def server() -> None:
     async with deps.use_all():
-        await sql_init.create_db()
         await tg_server.run()
 
 
