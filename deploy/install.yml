@@ -26,7 +26,7 @@
     - name: Synchronize files
       synchronize:
         src: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
-        dest: "/var/lib/{{ service_name }}"
+        dest: "/var/lib/{{ service_name }}/"
         delete: yes
         recursive: yes
  
