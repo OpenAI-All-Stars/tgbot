@@ -16,7 +16,7 @@ async def create(chat_id: int, body: ChatCompletionMessageParam) -> None:
         INSERT INTO chat_messages (chat_id, body, created_at)
         VALUES ($1, $2, $3)
         """,
-        chat_id, json.dumps(body), int(time.time()),
+        chat_id, json.dumps(body, ensure_ascii=False), int(time.time()),
     )
 
 
