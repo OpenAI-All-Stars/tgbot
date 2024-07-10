@@ -15,4 +15,4 @@ async def apply_migration(version: str, sql: str):
     async with db.get().acquire() as con:
         async with con.transaction():
             await con.execute(sql)
-            await con.execute("INSERT INTO schema_migrations (version) VALUES (%s)", version)
+            await con.execute("INSERT INTO schema_migrations (version) VALUES ($1)", version)
