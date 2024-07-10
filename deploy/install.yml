@@ -47,6 +47,11 @@
         cmd: poetry env info -p
       register: env_path_full
 
+    - name: Migrate
+      command:
+        chdir: "/var/lib/{{ service_name }}"
+        cmd: "{{ env_path }}/bin/{{ service_name }} migrate"
+
     - name: Create systemd file
       template:
         src: system.service.j2

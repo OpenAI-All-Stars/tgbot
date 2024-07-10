@@ -6,6 +6,7 @@ from simple_settings import settings
 
 from tgbot import deps, tg_server
 from tgbot.repositories import invite, sql_init
+from tgbot.servicecs import migrations
 
 from tgbot.utils import async_command
 
@@ -31,6 +32,13 @@ def cli() -> None:
 async def create_db() -> None:
     async with deps.use_db():
         await sql_init.create_db()
+
+
+@cli.command()
+@async_command
+async def migrate() -> None:
+    async with deps.use_db():
+        await migrations.applay()
 
 
 @cli.command()
