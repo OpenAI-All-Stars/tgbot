@@ -1,24 +1,24 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 from aiohttp import ClientSession
-import asyncpg
 import httpx
 from simple_settings import settings
 from openai import AsyncOpenAI
 from statsd import StatsClient
 
+from tgbot.pool_wrapper import Pool, create_pool
 from tgbot.registry import RegistryValue
 
 
-db = RegistryValue[asyncpg.Pool]()
+db = RegistryValue[Pool]()
 http_client = RegistryValue[ClientSession]()
 openai_client = RegistryValue[AsyncOpenAI]()
 telemetry = RegistryValue[StatsClient]()
 
 
 @asynccontextmanager
-async def use_db() -> AsyncIterator[asyncpg.Pool]:
-    async with asyncpg.create_pool(settings.POSTGRES_DSN) as pool:
+async def use_db() -> AsyncIterator[Pool]:
+    async with create_pool(settings.POSTGRES_DSN) as pool:
         db.set(pool)
         yield pool
 

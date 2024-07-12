@@ -1,7 +1,6 @@
 import asyncio
 from enum import Enum
 import io
-from typing import Literal
 
 import httpx
 from openai.types.chat.chat_completion import ChatCompletion
@@ -11,9 +10,7 @@ from PIL import Image
 from simple_settings import settings
 
 from tgbot.deps import openai_client
-
-
-SizeType = Literal["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"]
+from tgbot.types import ImageSizeType
 
 
 class Func(str, Enum):
@@ -78,7 +75,7 @@ FUNCTIONS = [
                 'size': {
                     'type': 'string',
                     'description': 'Image size',
-                    'enum': ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"]
+                    'enum': ["1024x1024", "1792x1024", "1024x1792"]
                 },
             },
             'required': ['description', 'size'],
@@ -98,12 +95,12 @@ async def send(user: str, messages: list[ChatCompletionMessageParam]) -> ChatCom
     )
 
 
-async def generate_image(promt: str, size: SizeType | None = None) -> tuple[str, bytes]:
+async def generate_image(promt: str, size: ImageSizeType) -> tuple[str, bytes]:
     client = openai_client.get()
     response = await client.images.generate(
         model='dall-e-3',
         prompt=promt,
-        size=size or '1024x1024',
+        size=size,
         quality='standard',
         n=1,
     )

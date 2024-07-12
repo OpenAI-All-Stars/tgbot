@@ -12,7 +12,6 @@ async def get_applied_migrations() -> set[str]:
 
 
 async def apply_migration(version: str, sql: str):
-    async with db.get().acquire() as con:
-        async with con.transaction():
-            await con.execute(sql)
-            await con.execute("INSERT INTO schema_migrations (version) VALUES ($1)", version)
+    async with db.get().transaction():
+        await db.get().execute(sql)
+        await db.get().execute("INSERT INTO schema_migrations (version) VALUES ($1)", version)
