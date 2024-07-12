@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS wallets
 (
-    user_id          INTEGER UNIQUE NOT NULL,
+    user_id          INTEGER UNIQUE REFERENCES users(user_id),
     microdollars     INTEGER NOT NULL
 );
 

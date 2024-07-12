@@ -13,7 +13,7 @@ from tgbot.utils import async_command
 
 @click.group()
 def cli() -> None:
-    logging.basicConfig(level=logging.WARNING)
+    logging.basicConfig(level=logging.INFO)
     if settings.SENTRY_DSN:
         sentry_sdk.init(
             dsn=settings.SENTRY_DSN,
