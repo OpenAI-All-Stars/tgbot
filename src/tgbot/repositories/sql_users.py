@@ -40,6 +40,8 @@ async def get(user_id: int) -> User | None:
         """,
         user_id,
     )
+    if not row:
+        return
     return User(
         user_id=row['user_id'],
         chat_id=row['chat_id'],

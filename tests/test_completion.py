@@ -1,24 +1,13 @@
 from datetime import datetime
+from unittest.mock import ANY
 
-import pytest
 
+async def test_success(settings, mock_server, db):
+    await db.execute('''
+    INSERT INTO users (user_id, chat_id)
+    VALUES (111, 111)
+    ''')
 
-@pytest.mark.parametrize(
-    'start_text, response_expected, users_expected',
-    [
-        ('/start eyJ0IjoxNzAzNDc3MTAwLjY4OTIzMDd9.BbWPzLxEwhu6ZWUIqpq_WLeR6cwzwp9bUfa07Ja8W_A', 'Добро пожаловать!', [{
-            'chat_id': 111,
-            'user_id': 111,
-            'full_name': 'cat',
-            'username': '',
-            'invite_code': '1703477100.6892307',
-        }]),
-        ('/start ff', 'Невалидный код', []),
-        ('/start', 'Ходу нет!', []),
-        ('привет', 'Требуется авторизация', []),
-    ],
-)
-async def test_success(settings, mock_server, db, start_text, response_expected, users_expected):
     update_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getUpdates',
         request_text='timeout=10&allowed_updates=%5B%22message%22%5D',
@@ -38,7 +27,7 @@ async def test_success(settings, mock_server, db, start_text, response_expected,
                         'is_bot': False,
                         'first_name': 'cat',
                     },
-                    'text': start_text
+                    'text': 'Привет'
                 },
             }],
         },
@@ -51,6 +40,12 @@ async def test_success(settings, mock_server, db, start_text, response_expected,
             'result': [],
         },
     )
+    mock_server.add_request_mock(
+        'POST', f'/bot{settings.TG_TOKEN}/sendChatAction',
+        response_json={
+            'ok': True,
+        },
+    )
     send_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/sendMessage',
         response_json={
@@ -59,26 +54,48 @@ async def test_success(settings, mock_server, db, start_text, response_expected,
                 'message_id': 22,
                 'date': datetime.now().isoformat(),
                 'chat': {
-                    'id': 111,
+                    'id': 222,
                     'type': 'private',
                 },
             },
         },
     )
-    mock_server.add_request_mock(
-        'POST', f'/bot{settings.TG_TOKEN}/sendChatAction',
+    completions_mock = mock_server.add_request_mock(
+        'POST', '/chat/completions',
         response_json={
-            'ok': True,
+            'id': 'chatcmpl-abc123',
+            'object': 'chat.completion',
+            'created': 1677858242,
+            'model': 'gpt-3.5-turbo-0613',
+            'usage': {
+                'prompt_tokens': 10,
+                'completion_tokens': 10,
+                'total_tokens': 20
+            },
+            'choices': [
+                {
+                    'message': {
+                        'role': 'assistant',
+                        'content': 'Пока'
+                    },
+                    'logprobs': None,
+                    'finish_reason': 'stop',
+                    'index': 0
+                }
+            ]
         },
     )
 
     assert await update_mock.wait()
     assert await send_mock.wait()
+    assert await completions_mock.wait()
 
     assert [r.encode_text() for r in send_mock.requests] == [{
         'chat_id': '111',
-        'text': response_expected,
+        'text': 'Пока',
         'parse_mode': 'Markdown',
     }]
-    got = await db.fetch('SELECT * FROM users')
-    assert [dict(x) for x in got] == users_expected
+    got = await db.fetch('SELECT * FROM wallets_history')
+    assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -240, 'created_at': ANY}]
+    got = await db.fetch('SELECT * FROM wallets')
+    assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -240}]

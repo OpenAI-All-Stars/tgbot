@@ -1,19 +1,3 @@
-CREATE TABLE IF NOT EXISTS users
-(
-    chat_id          INTEGER UNIQUE,
-    user_id          INTEGER UNIQUE,
-    full_name        TEXT,
-    username         TEXT,
-    invite_code      TEXT
-);
-
-CREATE TABLE IF NOT EXISTS chat_messages
-(
-    chat_id          INTEGER,
-    body             TEXT,
-    created_at       INTEGER
-);
-
 CREATE TABLE IF NOT EXISTS wallets
 (
     user_id          INTEGER UNIQUE REFERENCES users(user_id),

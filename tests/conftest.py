@@ -7,7 +7,7 @@ from pathlib import Path
 import socket
 import subprocess
 import time
-from typing import Any
+from typing import Any, AsyncGenerator
 from urllib.parse import parse_qs
 
 from aiohttp import web
@@ -18,17 +18,21 @@ import asyncpg
 from asyncpg import CannotConnectNowError
 
 
+logger = logging.getLogger(__name__)
+
+
 @pytest.fixture(scope='session')
 def app_env(mock_server_url, postgres_dsn):
     return {
         'SIMPLE_SETTINGS': 'tgbot.settings.test',
         'TELEGRAM_BASE_URL': mock_server_url,
         'POSTGRES_DSN': postgres_dsn,
+        'OPENAI_BASE_URL': mock_server_url,
     }
 
 
-@pytest.fixture(autouse=True, scope='session')
-async def _server(settings, mock_server, create_db):
+@pytest.fixture(autouse=True, scope='function')
+async def _server(settings, mock_server):
     get_me_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getMe',
         response_json={
@@ -56,8 +60,33 @@ async def _server(settings, mock_server, create_db):
 
 
 @pytest.fixture(scope='session')
-def create_db(settings):
-    subprocess.run(['tgbot', 'create-db'])
+async def db(settings) -> AsyncGenerator[asyncpg.Connection, None]:
+    conn = await asyncpg.connect(settings.POSTGRES_DSN)
+    try:
+        yield conn
+    finally:
+        await conn.close()
+
+
+@pytest.fixture(scope='function', autouse=True)
+async def _db_clean(db):
+    try:
+        f_name = Path(__file__).parent.parent / 'contrib' / 'postgres.sql'
+        with open(f_name) as f:
+            queries = f.read().split(';')
+        for q in queries:
+            if q.strip():
+                await db.execute(q)
+        yield
+    finally:
+        tables = await db.fetch("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+        """)
+        for table in tables:
+            await db.execute(f'TRUNCATE TABLE {table["table_name"]} CASCADE')
+
 
 
 @pytest.fixture(scope='session')
@@ -85,7 +114,7 @@ def mock_server_url(mock_server_connect) -> str:
 
 
 @pytest.fixture(scope='session')
-async def mock_server(mock_server_connect, mock_server_url, healthcheck):
+async def mock_server(mock_server_connect, mock_server_url, healthcheck) -> AsyncGenerator['MockServer', None]:
     server = MockServer()
     task = asyncio.create_task(server.start(*mock_server_connect))
     server.add_request_mock(
@@ -125,8 +154,7 @@ class RequestInfo:
 
 
 class MockRequest:
-    def __init__(self, response_json: Any) -> None:
-        self.response_json = response_json
+    def __init__(self) -> None:
         self.requests: list[RequestInfo] = []
     
     @property
@@ -147,9 +175,9 @@ class MockServer:
         self._app = web.Application(
             middlewares=[self._route_middleware],
         )
-        self._routes: dict[str, MockRequest] = {}
+        self._routes: list[dict] = []
         logger = logging.getLogger('aiohttp.access')
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.WARNING)
     
     async def start(self, host: str, port: int):
         await web._run_app(
@@ -164,25 +192,55 @@ class MockServer:
         self._routes.clear()
 
     @staticmethod
-    def _get_route_key(method: str, path: str) -> str:
-        return method + path
-    
-    def add_request_mock(self, method: str, path: str, response_json: Any) -> MockRequest:
-        mock = MockRequest(response_json)
-        self._routes[self._get_route_key(method, path)] = mock
+    def _dict_contains(superset: dict, subset: dict) -> bool:
+        return all(item in superset.items() for item in subset.items())
+
+    def add_request_mock(
+            self,
+            method: str,
+            path: str,
+            response_json: Any,
+            request_text: str | None = None,
+            request_json: Any = None,
+        ) -> MockRequest:
+        mock = MockRequest()
+        self._routes.append({
+            'method': method,
+            'path': path,
+            'request_text': request_text,
+            'request_json': request_json,
+            'response_json': response_json,
+            'mock': mock,
+        })
         return mock
 
     @web.middleware
     async def _route_middleware(self, request: web.Request, handler):
-        key = self._get_route_key(request.method, request.path)
-        mock = self._routes.get(key)
-        if mock:
-            mock.requests.append(
-                RequestInfo(
-                    text=await request.text(),
-                )
-            )
-            return web.json_response(mock.response_json)
+        logger.info('{} {} {}'.format(request.method, request.path, await request.text()))
+        for route in self._routes:
+            if route['method'] != request.method:
+                continue
+            if route['path'] != request.path:
+                continue
+            if route['request_text'] is not None and request.body_exists:
+                request_body = await request.text()
+                if route['request_text'] == request_body:
+                    route['mock'].requests.append(RequestInfo(
+                        text=request_body,
+                    ))
+                    return web.json_response(route['response_json'])
+            elif route['request_json'] is None:
+                route['mock'].requests.append(RequestInfo(
+                    text=await request.text() if request.body_exists else None,
+                ))
+                return web.json_response(route['response_json'])
+            elif request.body_exists:
+                request_body = await request.json()
+                if self._dict_contains(request_body, route['request_json']):
+                    route['mock'].requests.append(RequestInfo(
+                        text=await request.text(),
+                    ))
+                    return web.json_response(route['response_json'])
         raise web.HTTPNotFound()
 
 

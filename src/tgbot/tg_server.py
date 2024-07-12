@@ -8,6 +8,7 @@ from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart, Command
 from aiogram.types import BotCommand, BufferedInputFile
+from asyncpg import UniqueViolationError
 from simple_settings import settings
 
 from tgbot.deps import telemetry
@@ -45,13 +46,16 @@ async def cmd_start(message: types.Message) -> None:
     if await sql_users.exists_code(payload):
         await message.answer('Код не действителен')
         return
-    await sql_users.create(
-        message.from_user.id,
-        message.chat.id,
-        payload,
-        message.from_user.full_name,
-        message.from_user.username or '',
-    )
+    try:
+        await sql_users.create(
+            message.from_user.id,
+            message.chat.id,
+            payload,
+            message.from_user.full_name,
+            message.from_user.username or '',
+        )
+    except UniqueViolationError:
+        pass
     await message.answer(HI_MSG)
 
 

@@ -8,10 +8,12 @@ from openai.types.chat.chat_completion_system_message_param import ChatCompletio
 from openai.types.chat.chat_completion_user_message_param import ChatCompletionUserMessageParam
 from openai.types.chat.chat_completion_assistant_message_param import FunctionCall, ChatCompletionAssistantMessageParam
 
+from tgbot import price
 from tgbot.clients import http_yandex_search
 from tgbot.entities.user import User
 from tgbot.repositories import bash, http_openai, http_text_browser, sql_chat_messages
 from tgbot.repositories.http_openai import Func
+from tgbot.servicecs import wallet
 
 
 logger = logging.getLogger(__name__)
@@ -49,6 +51,7 @@ class ChatState:
 
     async def _send_messages(self) -> bytes | str | None:
         resp = await http_openai.send(str(self.user.chat_id), self.messages)
+        await wallet.spend(self.user.user_id, price.chatgpt_completion(resp.usage))
         assistant_message = ChatCompletionAssistantMessageParam(
             role=resp.choices[0].message.role,
             content=resp.choices[0].message.content,
@@ -120,11 +123,12 @@ class ChatState:
                 size = function_args.get('size')
                 if not size:
                     raise ArgRequired('create_image', 'size')
-                url, data = await http_openai.generate_image(description, size)
+                _, data = await http_openai.generate_image(description, size)
+                await wallet.spend(self.user.user_id, price.generate_image(size))
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
                     name=function_call['name'],
-                    content=url,
+                    content='done',
                 ))
                 return data
             case _:
