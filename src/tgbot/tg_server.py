@@ -142,6 +142,7 @@ async def send_answer(message: types.Message):
             'Недостаточно средств на счету. '
             'Для продолжения работы с ботом вам необходимо пополнить баланс.'
         ))
+        return
 
     telemetry.get().incr('messages')
 
