@@ -2,7 +2,7 @@ import asyncio
 from asyncio import Event
 import io
 
-from aiogram import Bot, Dispatcher, types
+from aiogram import F, Bot, Dispatcher, types
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
@@ -94,7 +94,7 @@ async def pre_checkout_query_handler(pre_checkout_q: types.PreCheckoutQuery):
     await pre_checkout_q.bot.answer_pre_checkout_query(pre_checkout_q.id, ok=True)
 
 
-@dp.message(content_types=ContentType.SUCCESSFUL_PAYMENT)
+@dp.message(F.successful_payment)
 async def successful_payment_handler(message: types.Message):
     assert message.bot
     assert message.successful_payment
