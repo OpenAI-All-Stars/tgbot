@@ -21,20 +21,20 @@ class Func(str, Enum):
 
 
 FUNCTIONS = [
-    Function(
-        name=Func.bash,
-        description='Execute any bash command in Debian buster, see output, store session',
-        parameters={
-            'type': 'object',
-            'properties': {
-                'command': {
-                    'type': 'string',
-                    'description': 'Bash command body',
-                },
-            },
-            'required': ['command'],
-        },
-    ),
+    # Function(
+    #     name=Func.bash,
+    #     description='Execute any bash command in Debian buster, see output, store session',
+    #     parameters={
+    #         'type': 'object',
+    #         'properties': {
+    #             'command': {
+    #                 'type': 'string',
+    #                 'description': 'Bash command body',
+    #             },
+    #         },
+    #         'required': ['command'],
+    #     },
+    # ),
     Function(
         name=Func.web_search,
         description='Search on internet',
