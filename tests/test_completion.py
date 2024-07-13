@@ -7,6 +7,10 @@ async def test_success(settings, mock_server, db):
     INSERT INTO users (user_id, chat_id)
     VALUES (111, 111)
     ''')
+    await db.execute('''
+    INSERT INTO wallets (user_id, microdollars)
+    VALUES (111, 1)
+    ''')
 
     update_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getUpdates',
@@ -98,4 +102,4 @@ async def test_success(settings, mock_server, db):
     got = await db.fetch('SELECT * FROM wallets_history')
     assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -240, 'created_at': ANY}]
     got = await db.fetch('SELECT * FROM wallets')
-    assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -240}]
+    assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -239}]

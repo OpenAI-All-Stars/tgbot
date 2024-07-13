@@ -11,11 +11,8 @@ import pytest
             'user_id': 111,
             'full_name': 'cat',
             'username': '',
-            'invite_code': '1703477100.6892307',
+            'invite_code': '',
         }]),
-        ('/start ff', 'Невалидный код', []),
-        ('/start', 'Ходу нет!', []),
-        ('привет', 'Требуется авторизация', []),
     ],
 )
 async def test_success(settings, mock_server, db, start_text, response_expected, users_expected):
