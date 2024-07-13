@@ -11,62 +11,52 @@ from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice
 from asyncpg import UniqueViolationError
 from simple_settings import settings
 
-from tgbot.deps import telemetry
-from tgbot.repositories import http_openai, invite, sql_chat_messages, sql_users, sql_wallets
+from tgbot.deps import telemetry, db
+from tgbot.repositories import http_openai, sql_chat_messages, sql_users, sql_wallets
 from tgbot.servicecs import ai, wallet
 from tgbot.utils import get_sign, tick_iterator
 
 HI_MSG = 'Добро пожаловать!'
-CLOSE_MSG = 'Ходу нет!'
-AUTH_MSG = 'Требуется авторизация'
 ALREADY_MSG = 'И снова добрый день!'
 
 dp = Dispatcher()
 
 
 @dp.message(CommandStart())
-async def cmd_start(message: types.Message) -> None:
+async def cmd_start(message: types.Message):
     if message.text is None or message.from_user is None:
-        return None
+        return
 
     if await sql_users.exists(message.from_user.id):
         await message.answer(ALREADY_MSG)
         return
 
-    parts = message.text.split(maxsplit=1)
-    if len(parts) != 2:
-        await message.answer(CLOSE_MSG)
-        return
-
-    code = parts[1]
-    payload = invite.get_payload(code)
-    if payload is None:
-        await message.answer('Невалидный код')
-        return
-    if await sql_users.exists_code(payload):
-        await message.answer('Код не действителен')
-        return
     try:
-        await sql_users.create(
-            message.from_user.id,
-            message.chat.id,
-            payload,
-            message.from_user.full_name,
-            message.from_user.username or '',
-        )
+        async with db.get().transaction():
+            await sql_users.create(
+                message.from_user.id,
+                message.chat.id,
+                '',
+                message.from_user.full_name,
+                message.from_user.username or '',
+            )
+            await sql_wallets.create(
+                message.from_user.id,
+                0,
+            )
     except UniqueViolationError:
         pass
     await message.answer(HI_MSG)
 
 
 @dp.message(Command('clean'))
-async def cmd_clean(message: types.Message) -> None:
+async def cmd_clean(message: types.Message):
     await sql_chat_messages.clean(message.chat.id)
     await message.answer('Контекст очищен')
 
 
 @dp.message(Command('balance'))
-async def cmd_balance(message: types.Message) -> None:
+async def cmd_balance(message: types.Message):
     assert message.from_user
     microdollars = await sql_wallets.get(message.from_user.id)
     await message.answer('Баланс: {}${:.2f}'.format(get_sign(microdollars), abs(microdollars / 1_000_000)))
@@ -89,7 +79,7 @@ async def cmd_buy(message: types.Message, command: CommandObject):
 
     await message.answer_invoice(
         title='Пополнение баланса',
-        description='⭐',
+        description='На {} ⭐'.format(amount),
         provider_token='',
         currency='XTR',
         prices=[LabeledPrice(label='XTR', amount=amount)],
@@ -108,16 +98,15 @@ async def successful_payment_handler(message: types.Message):
     payment_info = message.successful_payment
     await wallet.add(int(payment_info.invoice_payload), message.successful_payment.total_amount * 13_000)
     await message.answer(
-        'Платеж на сумму ${:.2f} прошел успешно!\n\nВаш айди транзакции:`{}`'.format(
+        'Платеж на сумму ${:.2f} прошел успешно!\n\nВаш айди транзакции: `{}`'.format(
             message.successful_payment.total_amount * 13_000 / 1_000_000,
             message.successful_payment.telegram_payment_charge_id,
         ),
-        message_effect_id='5104841245755180586',
     )
 
 
 @dp.message()
-async def main_handler(message: types.Message) -> None:
+async def main_handler(message: types.Message):
     if message.from_user is None:
         return None
 
@@ -129,7 +118,7 @@ async def main_handler(message: types.Message) -> None:
         stop.set()
 
 
-async def send_typing(message: types.Message, stop: Event) -> None:
+async def send_typing(message: types.Message, stop: Event):
     assert message.chat
     assert message.bot
     async for _ in tick_iterator(5):
@@ -138,13 +127,21 @@ async def send_typing(message: types.Message, stop: Event) -> None:
         await message.bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
 
 
-async def send_answer(message: types.Message) -> None:
+async def send_answer(message: types.Message):
     assert message.from_user
     assert message.bot
-    user = await sql_users.get(message.from_user.id)
+    user, balance = await asyncio.gather(
+        sql_users.get(message.from_user.id),
+        sql_wallets.get(message.from_user.id)
+    )
     if not user:
-        await message.answer(AUTH_MSG)
+        await message.answer('Неизвестная ошибка')
         return
+    if balance <= 0:
+        await message.answer((
+            'Недостаточно средств на счету. '
+            'Для продолжения работы с ботом вам необходимо пополнить баланс.'
+        ))
 
     telemetry.get().incr('messages')
 
