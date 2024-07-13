@@ -19,3 +19,7 @@ async def tick_iterator(interval_s: float) -> AsyncIterator:
         left = interval_s - gone
         if left > 0:
             await asyncio.sleep(left)
+
+
+def get_sign(num: int | float) -> str:
+    return '-' if num < 0 else ''

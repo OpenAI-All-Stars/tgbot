@@ -21,3 +21,14 @@ async def spend(user_id: int, value: int):
         INCREMENT_Q,
         user_id, -value,
     )
+
+
+async def get(user_id: int) -> int:
+    return await db.get().fetchval(
+        """
+        SELECT microdollars
+        FROM wallets
+        WHERE user_id = $1
+        """,
+        user_id,
+    )
