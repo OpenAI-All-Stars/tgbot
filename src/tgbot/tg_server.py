@@ -67,8 +67,9 @@ async def cmd_clean(message: types.Message) -> None:
 
 @dp.message(Command('balance'))
 async def cmd_balance(message: types.Message) -> None:
-    microdollars = await sql_wallets.get(message.user.id)
-    await message.answer('Баланс: {}${:.2f}'.format(get_sign(), abs(microdollars / 1_000_000)))
+    assert message.from_user
+    microdollars = await sql_wallets.get(message.from_user.id)
+    await message.answer('Баланс: {}${:.2f}'.format(get_sign(microdollars), abs(microdollars / 1_000_000)))
 
 
 @dp.message()
