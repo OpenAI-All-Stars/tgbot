@@ -7,7 +7,7 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart, Command
-from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice, ContentType
+from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice
 from asyncpg import UniqueViolationError
 from simple_settings import settings
 
