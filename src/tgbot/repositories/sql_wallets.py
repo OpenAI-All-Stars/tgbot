@@ -34,7 +34,7 @@ async def spend(user_id: int, value: int):
 
 
 async def get(user_id: int) -> int:
-    value = await db.get().fetchval(
+    return await db.get().fetchval(
         """
         SELECT microdollars
         FROM wallets
@@ -42,6 +42,3 @@ async def get(user_id: int) -> int:
         """,
         user_id,
     )
-    if value is None:
-        return 0
-    return value
