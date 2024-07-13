@@ -21,7 +21,7 @@ import pytest
 async def test_success(settings, mock_server, db, start_text, response_expected, users_expected):
     update_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getUpdates',
-        request_text='timeout=10&allowed_updates=%5B%22message%22%5D',
+        request_text='timeout=10&allowed_updates=%5B%22message%22%2C+%22pre_checkout_query%22%5D',
         response_json={
             'ok': True,
             'result': [{
@@ -45,7 +45,7 @@ async def test_success(settings, mock_server, db, start_text, response_expected,
     )
     mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getUpdates',
-        request_text='offset=2&timeout=10&allowed_updates=%5B%22message%22%5D',
+        request_text='offset=2&timeout=10&allowed_updates=%5B%22message%22%2C+%22pre_checkout_query%22%5D',
         response_json={
             'ok': True,
             'result': [],

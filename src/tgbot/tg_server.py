@@ -2,18 +2,18 @@ import asyncio
 from asyncio import Event
 import io
 
-from aiogram import Bot, Dispatcher, types
+from aiogram import F, Bot, Dispatcher, types
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart, Command
-from aiogram.types import BotCommand, BufferedInputFile
+from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice
 from asyncpg import UniqueViolationError
 from simple_settings import settings
 
 from tgbot.deps import telemetry
 from tgbot.repositories import http_openai, invite, sql_chat_messages, sql_users, sql_wallets
-from tgbot.servicecs import ai
+from tgbot.servicecs import ai, wallet
 from tgbot.utils import get_sign, tick_iterator
 
 HI_MSG = 'Добро пожаловать!'
@@ -70,6 +70,42 @@ async def cmd_balance(message: types.Message) -> None:
     assert message.from_user
     microdollars = await sql_wallets.get(message.from_user.id)
     await message.answer('Баланс: {}${:.2f}'.format(get_sign(microdollars), abs(microdollars / 1_000_000)))
+
+
+@dp.message(Command('buy'))
+async def cmd_buy(message: types.Message):
+    assert message.from_user
+    assert message.bot
+    await message.bot.send_invoice(
+        message.chat.id,
+        title='Пополнение баланса',
+        description='Пополнение баланса бота',
+        provider_token=settings.TG_PAYMENTS_TOKEN,
+        currency='USD',
+        prices=[LabeledPrice(label='Пополнение баланса', amount=500*100)],
+        start_parameter='add-balance',
+        payload=str(message.from_user.id),
+    )
+
+
+@dp.pre_checkout_query(lambda query: True)
+async def pre_checkout_query_handler(pre_checkout_q: types.PreCheckoutQuery):
+    assert pre_checkout_q.bot
+    await pre_checkout_q.bot.answer_pre_checkout_query(pre_checkout_q.id, ok=True)
+
+
+@dp.message(F.successful_payment)
+async def successful_payment_handler(message: types.Message):
+    assert message.bot
+    assert message.successful_payment
+    payment_info = message.successful_payment
+    await wallet.add(int(payment_info.invoice_payload), message.successful_payment.total_amount * 10_000)
+    await message.bot.send_message(
+        message.chat.id,
+        'Платеж на сумму ${:.2f} прошел успешно!'.format(
+            message.successful_payment.total_amount // 100,
+        ),
+    )
 
 
 @dp.message()
