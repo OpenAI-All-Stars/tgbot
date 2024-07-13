@@ -5,6 +5,7 @@ SIMPLE_SETTINGS = {
 OPENAI_BASE_URL = 'https://api.openai.com/v1'
 OPENAI_API_KEY = ''
 TG_TOKEN = ''
+TG_PAYMENTS_TOKEN = ''
 SECRET_INVITE = ''
 POSTGRES_DSN = ''
 OPENAI_MODEL = 'gpt-4o'
