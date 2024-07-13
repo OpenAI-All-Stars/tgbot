@@ -12,9 +12,9 @@ from asyncpg import UniqueViolationError
 from simple_settings import settings
 
 from tgbot.deps import telemetry
-from tgbot.repositories import http_openai, invite, sql_chat_messages, sql_users
+from tgbot.repositories import http_openai, invite, sql_chat_messages, sql_users, sql_wallets
 from tgbot.servicecs import ai
-from tgbot.utils import tick_iterator
+from tgbot.utils import get_sign, tick_iterator
 
 HI_MSG = 'Добро пожаловать!'
 CLOSE_MSG = 'Ходу нет!'
@@ -63,6 +63,12 @@ async def cmd_start(message: types.Message) -> None:
 async def cmd_clean(message: types.Message) -> None:
     await sql_chat_messages.clean(message.chat.id)
     await message.answer('Контекст очищен')
+
+
+@dp.message(Command('balance'))
+async def cmd_balance(message: types.Message) -> None:
+    microdollars = await sql_wallets.get(message.user.id)
+    await message.answer('Баланс: {}${:.2f}'.format(get_sign(), abs(microdollars / 1_000_000)))
 
 
 @dp.message()
