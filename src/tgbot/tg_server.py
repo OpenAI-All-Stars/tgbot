@@ -6,7 +6,7 @@ from aiogram import F, Bot, Dispatcher, types
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice
 from asyncpg import UniqueViolationError
 from simple_settings import settings
@@ -72,39 +72,47 @@ async def cmd_balance(message: types.Message) -> None:
     await message.answer('Баланс: {}${:.2f}'.format(get_sign(microdollars), abs(microdollars / 1_000_000)))
 
 
-@dp.message(Command('buy'))
-async def cmd_buy(message: types.Message):
+@dp.message(Command('buy_stars'))
+async def cmd_buy(message: types.Message, command: CommandObject):
     assert message.from_user
-    assert message.bot
-    await message.bot.send_invoice(
-        message.chat.id,
+
+    if command.args is None:
+        amount = 1
+    else:
+        if (
+            not command.args.isdigit()
+            or not 1 <= int(command.args) <= 2500
+        ):
+            await message.answer('Введите сумму в формате /buy_stars ЧИСЛО, где ЧИСЛО от 1 до 2500.')
+            return
+        amount = int(command.args)
+
+    await message.answer_invoice(
         title='Пополнение баланса',
-        description='Пополнение баланса бота',
-        provider_token=settings.TG_PAYMENTS_TOKEN,
-        currency='USD',
-        prices=[LabeledPrice(label='Пополнение баланса', amount=500*100)],
-        start_parameter='add-balance',
+        description='⭐',
+        provider_token='',
+        currency='XTR',
+        prices=[LabeledPrice(label='XTR', amount=amount)],
         payload=str(message.from_user.id),
     )
 
 
 @dp.pre_checkout_query(lambda query: True)
 async def pre_checkout_query_handler(pre_checkout_q: types.PreCheckoutQuery):
-    assert pre_checkout_q.bot
-    await pre_checkout_q.bot.answer_pre_checkout_query(pre_checkout_q.id, ok=True)
+    await pre_checkout_q.answer(ok=True)
 
 
 @dp.message(F.successful_payment)
 async def successful_payment_handler(message: types.Message):
-    assert message.bot
     assert message.successful_payment
     payment_info = message.successful_payment
-    await wallet.add(int(payment_info.invoice_payload), message.successful_payment.total_amount * 10_000)
-    await message.bot.send_message(
-        message.chat.id,
-        'Платеж на сумму ${:.2f} прошел успешно!'.format(
-            message.successful_payment.total_amount // 100,
+    await wallet.add(int(payment_info.invoice_payload), message.successful_payment.total_amount * 13_000)
+    await message.answer(
+        'Платеж на сумму ${:.2f} прошел успешно!\n\nВаш айди транзакции:`{}`'.format(
+            message.successful_payment.total_amount * 13_000 / 1_000_000,
+            message.successful_payment.telegram_payment_charge_id,
         ),
+        message_effect_id='5104841245755180586',
     )
 
 
@@ -175,6 +183,7 @@ async def run() -> None:
         ),
     )
     await bot.set_my_commands(commands=[
+        BotCommand(command='/buy_stars', description='Пополнить баланс звёздами'),
         BotCommand(command='/balance', description='Показать баланс'),
         BotCommand(command='/clean', description='Очистить контекст'),
     ])
