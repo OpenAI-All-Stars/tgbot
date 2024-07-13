@@ -312,7 +312,7 @@ def postgres_dsn(get_free_port):
                 conn = await asyncpg.connect(dsn)
                 await conn.close()
                 break
-            except (ConnectionResetError, CannotConnectNowError):
+            except (ConnectionError, CannotConnectNowError):
                 await asyncio.sleep(1)
         else:
             raise TimeoutError('Failed to connect to PostgreSQL')

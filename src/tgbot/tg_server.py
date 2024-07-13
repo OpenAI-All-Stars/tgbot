@@ -139,6 +139,7 @@ async def run() -> None:
         ),
     )
     await bot.set_my_commands(commands=[
+        BotCommand(command='/balance', description='Показать баланс'),
         BotCommand(command='/clean', description='Очистить контекст'),
     ])
     await dp.start_polling(bot)
