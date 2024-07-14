@@ -2,15 +2,9 @@ from datetime import datetime
 from unittest.mock import ANY
 
 
-async def test_success(settings, mock_server, db):
-    await db.execute('''
-    INSERT INTO users (user_id)
-    VALUES (111)
-    ''')
-    await db.execute('''
-    INSERT INTO wallets (user_id, microdollars)
-    VALUES (111, 1)
-    ''')
+async def test_success(tg_server, settings, mock_server, db):
+    await db.execute('INSERT INTO users (user_id) VALUES (111)')
+    await db.execute('INSERT INTO wallets (user_id, microdollars) VALUES (111, 1)')
 
     update_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getUpdates',

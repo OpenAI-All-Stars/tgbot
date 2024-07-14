@@ -31,8 +31,8 @@ def app_env(mock_server_url, postgres_dsn):
     }
 
 
-@pytest.fixture(autouse=True, scope='function')
-async def _server(settings, mock_server):
+@pytest.fixture(scope='function')
+async def tg_server(settings, mock_server, db_clean, db_create):
     get_me_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getMe',
         response_json={
@@ -68,25 +68,25 @@ async def db(settings) -> AsyncGenerator[asyncpg.Connection, None]:
         await conn.close()
 
 
-@pytest.fixture(scope='function', autouse=True)
-async def _db_clean(db):
-    try:
-        f_name = Path(__file__).parent.parent / 'contrib' / 'postgres.sql'
-        with open(f_name) as f:
-            queries = f.read().split(';')
-        for q in queries:
-            if q.strip():
-                await db.execute(q)
-        yield
-    finally:
-        tables = await db.fetch("""
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-        """)
-        for table in tables:
-            await db.execute(f'TRUNCATE TABLE {table["table_name"]} CASCADE')
+@pytest.fixture(scope='function')
+async def db_create(db):
+    f_name = Path(__file__).parent.parent / 'contrib' / 'postgres.sql'
+    with open(f_name) as f:
+        queries = f.read().split(';')
+    for q in queries:
+        if q.strip():
+            await db.execute(q)
 
+
+@pytest.fixture(scope='function')
+async def db_clean(db):
+    tables = await db.fetch("""
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+    """)
+    for table in tables:
+        await db.execute(f'DROP TABLE {table["table_name"]} CASCADE')
 
 
 @pytest.fixture(scope='session')

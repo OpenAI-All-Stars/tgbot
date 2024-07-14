@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS users
+CREATE TABLE users
 (
     chat_id          INTEGER UNIQUE,
     user_id          INTEGER UNIQUE,
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users
     created_at       timestamptz NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS chat_messages
+CREATE TABLE chat_messages
 (
     chat_id          INTEGER,
     body             TEXT,
