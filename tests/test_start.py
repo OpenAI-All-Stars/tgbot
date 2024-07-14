@@ -1,4 +1,5 @@
 from datetime import datetime
+from unittest.mock import ANY
 
 import pytest
 
@@ -11,6 +12,7 @@ import pytest
             'full_name': 'cat',
             'username': '',
             'invite_code': '',
+            'created_at': ANY,
         }]),
     ],
 )

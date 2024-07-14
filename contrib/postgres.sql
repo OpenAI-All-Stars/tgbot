@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS users
     user_id          INTEGER UNIQUE,
     full_name        TEXT,
     username         TEXT,
-    invite_code      TEXT
+    invite_code      TEXT,
+    created_at       timestamptz NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS chat_messages
@@ -11,7 +12,7 @@ CREATE TABLE IF NOT EXISTS chat_messages
     user_id          INTEGER REFERENCES users(user_id),
     chat_id          INTEGER,
     body             TEXT,
-    created_at       INTEGER
+    created_at       timestamptz NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS wallets
