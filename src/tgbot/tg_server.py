@@ -97,7 +97,7 @@ async def successful_payment_handler(message: types.Message):
     payment_info = message.successful_payment
     await wallet.add(int(payment_info.invoice_payload), message.successful_payment.total_amount * 13_000)
     await message.answer(
-        'Платеж на сумму ${:.2f} прошел успешно!\n\nВаш айди транзакции: `{}`'.format(
+        'Платеж на сумму ${:.2f} прошел успешно!\n\nАйди транзакции:\n`{}`'.format(
             message.successful_payment.total_amount * 13_000 / 1_000_000,
             message.successful_payment.telegram_payment_charge_id,
         ),
@@ -152,7 +152,7 @@ async def send_answer(message: types.Message):
         try:
             await message.bot.download_file(file_params.file_path, file_data)
             file_data.name = 'voice.ogg'
-            requeset_text = await http_openai.auodo2text(file_data)
+            requeset_text = await http_openai.audio2text(file_data)
         finally:
             file_data.close()
     elif message.text:
@@ -174,7 +174,7 @@ async def send_answer(message: types.Message):
 async def run() -> None:
     bot = Bot(
         settings.TG_TOKEN,
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=ParseMode.MARKDOWN_V2,
         session=AiohttpSession(
             api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
         ),
@@ -184,4 +184,4 @@ async def run() -> None:
         BotCommand(command='/balance', description='Показать баланс'),
         BotCommand(command='/clean', description='Очистить контекст'),
     ])
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, handle_signals=False)
