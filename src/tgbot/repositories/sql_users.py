@@ -35,7 +35,7 @@ async def exists_code(code: str) -> bool:
 async def get(user_id: int) -> User | None:
     row = await db.get().fetchrow(
         """
-        SELECT * FROM users
+        SELECT user_id, full_name, username FROM users
         WHERE user_id = $1
         """,
         user_id,
