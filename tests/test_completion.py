@@ -91,7 +91,7 @@ async def test_success(tg_server, settings, mock_server, db):
     assert [r.encode_text() for r in send_mock.requests] == [{
         'chat_id': '111',
         'text': 'Пока',
-        'parse_mode': 'MarkdownV2',
+        'parse_mode': 'Markdown',
     }]
     got = await db.fetch('SELECT * FROM wallets_history')
     assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -240, 'created_at': ANY}]
