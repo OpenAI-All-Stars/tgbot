@@ -174,7 +174,7 @@ async def send_answer(message: types.Message):
 async def run() -> None:
     bot = Bot(
         settings.TG_TOKEN,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.MARKDOWN,
         session=AiohttpSession(
             api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
         ),
