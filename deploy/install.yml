@@ -64,7 +64,7 @@
         mode: 644
       vars:
         name: "{{ service_name }}"
-        exec: "{{ env_path }}/bin/{{ service_name }} server"
+        exec: "{{ env_path }}/bin/uvicorn tgbot.web:app --uds /tmp/tgbot.sock"
         extra_env_vars:
           - OPENAI_API_KEY
           - TG_TOKEN

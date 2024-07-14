@@ -110,7 +110,7 @@ async def generate_image(promt: str, size: ImageSizeType) -> tuple[str, bytes]:
     return url, data.getvalue()
 
 
-async def auodo2text(audio_file: io.BytesIO) -> str:
+async def audio2text(audio_file: io.BytesIO) -> str:
     client = openai_client.get()
     transcription = await client.audio.transcriptions.create(
         file=audio_file,

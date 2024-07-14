@@ -76,7 +76,7 @@ async def test_success(tg_server, settings, mock_server, db, start_text, respons
     assert [r.encode_text() for r in send_mock.requests] == [{
         'chat_id': '111',
         'text': response_expected,
-        'parse_mode': 'Markdown',
+        'parse_mode': 'MarkdownV2',
     }]
     got = await db.fetch('SELECT * FROM users')
     assert [dict(x) for x in got] == users_expected
