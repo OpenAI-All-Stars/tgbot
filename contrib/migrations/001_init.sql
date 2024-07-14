@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS users
+CREATE TABLE users
 (
     chat_id          INTEGER UNIQUE,
     user_id          INTEGER UNIQUE,
@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users
     invite_code      TEXT
 );
 
-CREATE TABLE IF NOT EXISTS chat_messages
+CREATE TABLE chat_messages
 (
     chat_id          INTEGER,
     body             TEXT,

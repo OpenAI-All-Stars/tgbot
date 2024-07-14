@@ -6,7 +6,7 @@ import pytest
 @pytest.mark.parametrize(
     'start_text, response_expected, users_expected',
     [
-        ('/start eyJ0IjoxNzAzNDc3MTAwLjY4OTIzMDd9.BbWPzLxEwhu6ZWUIqpq_WLeR6cwzwp9bUfa07Ja8W_A', 'Добро пожаловать!', [{
+        ('/start', 'Добро пожаловать!', [{
             'user_id': 111,
             'full_name': 'cat',
             'username': '',
@@ -14,7 +14,7 @@ import pytest
         }]),
     ],
 )
-async def test_success(settings, mock_server, db, start_text, response_expected, users_expected):
+async def test_success(tg_server, settings, mock_server, db, start_text, response_expected, users_expected):
     update_mock = mock_server.add_request_mock(
         'POST', f'/bot{settings.TG_TOKEN}/getUpdates',
         request_text='timeout=10&allowed_updates=%5B%22message%22%2C+%22pre_checkout_query%22%5D',

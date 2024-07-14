@@ -1,10 +1,10 @@
-CREATE TABLE IF NOT EXISTS wallets
+CREATE TABLE wallets
 (
     user_id          INTEGER UNIQUE REFERENCES users(user_id),
     microdollars     INTEGER NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS wallets_history
+CREATE TABLE wallets_history
 (
     user_id          INTEGER REFERENCES users(user_id),
     microdollars     INTEGER NOT NULL,
