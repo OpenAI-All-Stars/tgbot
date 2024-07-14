@@ -10,13 +10,13 @@ from openai.types.chat.chat_completion_assistant_message_param import FunctionCa
 from tgbot.deps import db
 
 
-async def create(chat_id: int, body: ChatCompletionMessageParam) -> None:
+async def create(user_id: int, chat_id: int, body: ChatCompletionMessageParam) -> None:
     await db.get().execute(
         """
-        INSERT INTO chat_messages (chat_id, body, created_at)
-        VALUES ($1, $2, $3)
+        INSERT INTO chat_messages (user_id, chat_id, body, created_at)
+        VALUES ($1, $2, $3, $4)
         """,
-        chat_id, json.dumps(body), int(time.time()),
+        user_id, chat_id, json.dumps(body), int(time.time()),
     )
 
 

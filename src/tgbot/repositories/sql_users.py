@@ -2,13 +2,13 @@ from tgbot.deps import db
 from tgbot.entities.user import User
 
 
-async def create(user_id: int, chat_id: int, code: str, full_name: str, username: str) -> None:
+async def create(user_id: int, code: str, full_name: str, username: str) -> None:
     await db.get().execute(
         """
-        INSERT INTO users (user_id, chat_id, invite_code, full_name, username)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO users (user_id, invite_code, full_name, username)
+        VALUES ($1, $2, $3, $4)
         """,
-        user_id, chat_id, code, full_name, username,
+        user_id, code, full_name, username,
     )
 
 
@@ -44,7 +44,6 @@ async def get(user_id: int) -> User | None:
         return
     return User(
         user_id=row['user_id'],
-        chat_id=row['chat_id'],
         full_name=row['full_name'],
         username=row['username'],
     )

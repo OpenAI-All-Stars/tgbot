@@ -10,7 +10,6 @@ from openai.types.chat.chat_completion_assistant_message_param import FunctionCa
 
 from tgbot import price
 from tgbot.clients import http_yandex_search
-from tgbot.entities.user import User
 from tgbot.repositories import bash, http_openai, http_text_browser, sql_chat_messages
 from tgbot.repositories.http_openai import Func
 from tgbot.servicecs import wallet
@@ -20,9 +19,11 @@ logger = logging.getLogger(__name__)
 
 
 class ChatState:
-    def __init__(self, message: types.Message, user: User, messages: list[ChatCompletionMessageParam]) -> None:
+    def __init__(self, message: types.Message, messages: list[ChatCompletionMessageParam]) -> None:
+        assert message.from_user
         self.message = message
-        self.user = user
+        self.user_id = message.from_user.id
+        self.chat_id = message.chat.id
         self.messages = messages
 
     async def send(self, text: str) -> bytes | str:
@@ -39,19 +40,19 @@ class ChatState:
                 name=e.func_name,
                 content=e.message,
             ))
-            await sql_chat_messages.create(self.user.chat_id, self.messages[-1])
+            await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
         except Exception as e:
             logger.exception(e)
             self.messages.append(ChatCompletionSystemMessageParam(
                 role='system',
                 content='неизвестная ошибка',
             ))
-            await sql_chat_messages.create(self.user.chat_id, self.messages[-1])
+            await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
         return 'ошибка, попробуйте другой запрос'
 
     async def _send_messages(self) -> bytes | str | None:
-        resp = await http_openai.send(str(self.user.chat_id), self.messages)
-        await wallet.spend(self.user.user_id, price.chatgpt_completion(resp.usage))
+        resp = await http_openai.send(str(self.chat_id), self.messages)
+        await wallet.spend(self.user_id, price.chatgpt_completion(resp.usage))
         assistant_message = ChatCompletionAssistantMessageParam(
             role=resp.choices[0].message.role,
             content=resp.choices[0].message.content,
@@ -62,14 +63,14 @@ class ChatState:
                 arguments=resp.choices[0].message.function_call.arguments,
             )
 
-        await sql_chat_messages.create(self.user.chat_id, self.messages[-1])
+        await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
 
         function_call = assistant_message.get('function_call')
         if not function_call:
             answer = assistant_message.get('content') or ''
             return answer
         self.messages.append(assistant_message)
-        await sql_chat_messages.create(self.user.chat_id, self.messages[-1])
+        await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
 
         match function_call['name']:
             case Func.bash:
@@ -124,7 +125,7 @@ class ChatState:
                 if not size:
                     raise ArgRequired('create_image', 'size')
                 _, data = await http_openai.generate_image(description, size)
-                await wallet.spend(self.user.user_id, price.generate_image(size))
+                await wallet.spend(self.user_id, price.generate_image(size))
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
                     name=function_call['name'],
@@ -135,9 +136,9 @@ class ChatState:
                 raise FuncUnknow(function_call['name'])
 
 
-async def get_chat_state(message: types.Message, user: User) -> ChatState:
-    messages = await sql_chat_messages.get_last(user.chat_id, 10)
-    return ChatState(message, user, messages)
+async def get_chat_state(message: types.Message) -> ChatState:
+    messages = await sql_chat_messages.get_last(message.chat.id, 10)
+    return ChatState(message, messages)
 
 
 class BadCallException(Exception):

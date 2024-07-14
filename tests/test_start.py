@@ -7,7 +7,6 @@ import pytest
     'start_text, response_expected, users_expected',
     [
         ('/start eyJ0IjoxNzAzNDc3MTAwLjY4OTIzMDd9.BbWPzLxEwhu6ZWUIqpq_WLeR6cwzwp9bUfa07Ja8W_A', 'Добро пожаловать!', [{
-            'chat_id': 111,
             'user_id': 111,
             'full_name': 'cat',
             'username': '',
