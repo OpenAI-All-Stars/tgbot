@@ -35,7 +35,6 @@ async def cmd_start(message: types.Message):
         async with db.get().transaction():
             await sql_users.create(
                 message.from_user.id,
-                message.chat.id,
                 '',
                 message.from_user.full_name,
                 message.from_user.username or '',
@@ -161,7 +160,7 @@ async def send_answer(message: types.Message):
     else:
         return
 
-    state = await ai.get_chat_state(message, user)
+    state = await ai.get_chat_state(message)
     answer = await state.send(requeset_text)
     if isinstance(answer, bytes):
         await message.bot.send_photo(

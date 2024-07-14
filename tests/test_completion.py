@@ -4,8 +4,8 @@ from unittest.mock import ANY
 
 async def test_success(settings, mock_server, db):
     await db.execute('''
-    INSERT INTO users (user_id, chat_id)
-    VALUES (111, 111)
+    INSERT INTO users (user_id)
+    VALUES (111)
     ''')
     await db.execute('''
     INSERT INTO wallets (user_id, microdollars)
