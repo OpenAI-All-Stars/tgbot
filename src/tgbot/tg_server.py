@@ -78,10 +78,7 @@ async def cmd_buy(message: types.Message, command: CommandObject):
 
     await message.answer_invoice(
         title='Пополнение баланса',
-        description=(
-            'Telegram берет комиссию, [подробнее](https://core.telegram.org/bots/payments-stars).\n\n'
-            'Для пополнения на другую сумму, используйте /buy_stars ЧИСЛО.'
-        ),
+        description='Для пополнения на другую сумму, используйте /buy_stars ЧИСЛО.',
         provider_token='',
         currency='XTR',
         prices=[LabeledPrice(label='XTR', amount=amount)],
