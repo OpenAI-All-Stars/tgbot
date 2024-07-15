@@ -66,7 +66,7 @@ async def cmd_buy(message: types.Message, command: CommandObject):
     assert message.from_user
 
     if command.args is None:
-        amount = 1
+        amount = 50
     else:
         if (
             not command.args.isdigit()
@@ -78,7 +78,10 @@ async def cmd_buy(message: types.Message, command: CommandObject):
 
     await message.answer_invoice(
         title='Пополнение баланса',
-        description='На {} ⭐'.format(amount),
+        description=(
+            'Telegram берет комиссию, [подробнее](https://core.telegram.org/bots/payments-stars).\n\n'
+            'Для пополнения на другую сумму, используйте /buy_stars ЧИСЛО.'
+        ),
         provider_token='',
         currency='XTR',
         prices=[LabeledPrice(label='XTR', amount=amount)],
