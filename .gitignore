@@ -1,7 +1,5 @@
-.idea
 __pycache__
 .tox
-.mypy_cache
-src/tgbot/settings/dev.py
+src/*/settings/dev.py
 .venv
 .openai-agent-history
