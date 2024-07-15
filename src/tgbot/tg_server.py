@@ -134,7 +134,7 @@ async def send_answer(message: types.Message):
         sql_wallets.get(message.from_user.id)
     )
     if not user:
-        await message.answer('Неизвестная ошибка')
+        await message.answer('Ошибка. Вызовите команду /start.')
         return
     if balance <= 0:
         await message.answer((
