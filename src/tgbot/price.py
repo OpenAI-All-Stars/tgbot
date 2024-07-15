@@ -14,8 +14,8 @@ def chatgpt_completion(usage: CompletionUsage | None) -> int:
 
 def generate_image(size: ImageSizeType) -> int:
     match size:
-        case '1024×1024':
+        case '1024x1024':
             return int(40_000 * COMMISSION_COEFFICIENT)
-        case '1024×1792', '1792×1024':
+        case '1024x1792', '1792x1024':
             return int(80_000 * COMMISSION_COEFFICIENT)
     raise Exception('unknown size')
