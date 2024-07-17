@@ -7,6 +7,7 @@ from openai.types.chat.chat_completion_function_message_param import ChatComplet
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
 from openai.types.chat.chat_completion_user_message_param import ChatCompletionUserMessageParam
 from openai.types.chat.chat_completion_assistant_message_param import FunctionCall, ChatCompletionAssistantMessageParam
+from simple_settings import settings
 
 from tgbot import price
 from tgbot.clients import http_yandex_search
@@ -137,7 +138,10 @@ class ChatState:
 
 
 async def get_chat_state(message: types.Message) -> ChatState:
-    messages = await sql_chat_messages.get_last(message.chat.id, 10)
+    messages = await sql_chat_messages.get_last(
+        message.chat.id,
+        settings.CHAT_MESSAGES_LIMIT,
+    )
     return ChatState(message, messages)
 
 

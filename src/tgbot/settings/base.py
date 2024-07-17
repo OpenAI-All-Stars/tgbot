@@ -24,3 +24,5 @@ STATSD_PREFIX = 'openai-all-stars.tgbot'
 SENTRY_DSN = ''
 
 HOST_INTERNAL = 'localhost'
+
+CHAT_MESSAGES_LIMIT = 10
