@@ -52,7 +52,15 @@ class ChatState:
         return 'ошибка, попробуйте другой запрос'
 
     async def _send_messages(self) -> bytes | str | None:
-        resp = await http_openai.send(str(self.chat_id), self.messages)
+        messages = [ChatCompletionSystemMessageParam(
+            role='system',
+            content=(
+                'Доступная разметка текста: '
+                r'**bold**, *italic*, `code`, ~~strike~~, ```c++\ncode```.'
+                r'Спец символы экранировать так \*'
+            ),
+        )] + self.messages.copy()
+        resp = await http_openai.send(str(self.chat_id), messages)
         await wallet.spend(self.user_id, price.chatgpt_completion(resp.usage))
         assistant_message = ChatCompletionAssistantMessageParam(
             role=resp.choices[0].message.role,
