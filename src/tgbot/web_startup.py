@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import sentry_sdk
 from simple_settings import settings
 
-from tgbot import deps, tg_server
+from tgbot import deps, tg_server, workers
 
 
 @asynccontextmanager
@@ -17,4 +17,5 @@ async def lifespan(_):
         )
     async with deps.use_all():
         asyncio.create_task(tg_server.run())
+        asyncio.create_task(workers.clean_chat_messages_worker.start())
         yield

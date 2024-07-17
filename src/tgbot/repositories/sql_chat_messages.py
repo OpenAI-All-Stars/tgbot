@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
@@ -33,6 +34,44 @@ async def get_last(chat_id: int, limit: int) -> list[ChatCompletionMessageParam]
         convert2type(json.loads(row['body']))
         for row in reversed(rows)
     ]
+
+
+async def get_first_date_of_last(chat_id: int, limit: int) -> datetime:
+    rows = await db.get().fetch(
+        """
+        SELECT created_at FROM chat_messages
+        WHERE chat_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2
+        """,
+        chat_id, limit,
+    )
+    if rows:
+        return rows[-1]['created_at']
+    return datetime.now()
+
+
+async def get_active_chats(from_time: datetime) -> list[int]:
+    rows = await db.get().fetch(
+        """
+        SELECT chat_id FROM chat_messages
+        WHERE created_at > $1
+        GROUP BY chat_id
+        ORDER BY chat_id
+        """,
+        from_time,
+    )
+    return [row['chat_id'] for row in rows]
+
+
+async def delete_old_at(chat_id: int, delete_at: datetime):
+    await db.get().execute(
+        """
+        DELETE FROM chat_messages
+        WHERE chat_id = $1 AND created_at < $2
+        """,
+        chat_id, delete_at,
+    )
 
 
 async def clean(chat_id: int) -> None:

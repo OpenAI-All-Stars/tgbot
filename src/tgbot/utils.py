@@ -1,7 +1,11 @@
 import asyncio
 import functools
+import logging
 import time
-from typing import AsyncIterator, Callable
+from typing import AsyncIterator, Awaitable, Callable
+
+
+logger = logging.getLogger(__name__)
 
 
 def async_command(f: Callable) -> Callable:
@@ -23,3 +27,20 @@ async def tick_iterator(interval_s: float) -> AsyncIterator:
 
 def get_sign(num: int | float) -> str:
     return '-' if num < 0 else ''
+
+
+class worker:
+    def __init__(self, timeout_s: float):
+        self.timeout_s = timeout_s
+
+    def __call__(self, f: Callable[[], Awaitable[None]]) -> 'worker':
+        self.f = f
+        return self
+
+    async def start(self):
+        while True:
+            try:
+                await self.f()
+            except Exception as e:
+                logger.exception(e)
+            await asyncio.sleep(self.timeout_s)
