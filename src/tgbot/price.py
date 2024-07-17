@@ -19,3 +19,7 @@ def generate_image(size: ImageSizeType) -> int:
         case '1024x1792' | '1792x1024':
             return int(80_000 * COMMISSION_COEFFICIENT)
     raise Exception('unknown size')
+
+
+def audio2text(duration_s: int) -> int:
+    return int(duration_s * 100 * COMMISSION_COEFFICIENT)

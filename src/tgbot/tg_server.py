@@ -11,6 +11,7 @@ from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice
 from asyncpg import UniqueViolationError
 from simple_settings import settings
 
+from tgbot import price
 from tgbot.deps import telemetry, db
 from tgbot.repositories import http_openai, sql_chat_messages, sql_users, sql_wallets
 from tgbot.servicecs import ai, wallet
@@ -155,6 +156,7 @@ async def send_answer(message: types.Message):
             requeset_text = await http_openai.audio2text(file_data)
         finally:
             file_data.close()
+        await wallet.spend(message.from_user.id, price.audio2text(message.voice.duration))
     elif message.text:
         requeset_text = message.text
     else:
