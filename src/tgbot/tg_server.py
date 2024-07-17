@@ -165,12 +165,16 @@ async def send_answer(message: types.Message):
     state = await ai.get_chat_state(message)
     answer = await state.send(requeset_text)
     if isinstance(answer, bytes):
-        await message.bot.send_photo(
-            message.chat.id,
+        await message.answer_photo(
             BufferedInputFile(answer, 'answer.jpg'),
         )
     elif isinstance(answer, str):
-        await message.answer(answer)
+        if len(answer) > 4096:
+            await message.answer_document(
+                BufferedInputFile(answer.encode(), filename='answer.txt'),
+            )
+        else:
+            await message.answer(answer)
 
 
 async def run() -> None:
