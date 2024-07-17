@@ -65,13 +65,13 @@ class ChatState:
             )
 
         await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
+        self.messages.append(assistant_message)
+        await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
 
         function_call = assistant_message.get('function_call')
         if not function_call:
             answer = assistant_message.get('content') or ''
             return answer
-        self.messages.append(assistant_message)
-        await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
 
         match function_call['name']:
             case Func.bash:
