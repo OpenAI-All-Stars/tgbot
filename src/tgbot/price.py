@@ -21,5 +21,5 @@ def generate_image(size: ImageSizeType) -> int:
     raise Exception('unknown size')
 
 
-def audio2text(duration: int) -> int:
-    return int(duration * 6_000 * COMMISSION_COEFFICIENT)
+def audio2text(duration_s: int) -> int:
+    return int(duration_s * 100 * COMMISSION_COEFFICIENT)
