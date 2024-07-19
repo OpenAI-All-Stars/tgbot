@@ -3,3 +3,5 @@ __pycache__
 src/*/settings/dev.py
 .venv
 .openai-agent-history
+.coverage*
+cov.xml
