@@ -2,10 +2,8 @@ import asyncio
 from asyncio import Event
 import io
 
-from aiogram import F, Bot, Dispatcher, types
-from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.client.telegram import TelegramAPIServer
-from aiogram.enums import ParseMode, ChatAction
+from aiogram import F, Dispatcher, types
+from aiogram.enums import ChatAction
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -13,7 +11,7 @@ from asyncpg import UniqueViolationError
 from simple_settings import settings
 
 from tgbot import price
-from tgbot.deps import telemetry, db
+from tgbot.deps import telemetry, db, tg_bot
 from tgbot.repositories import http_openai, sql_chat_messages, sql_users, sql_wallets
 from tgbot.servicecs import ai, wallet
 from tgbot.utils import get_sign, tick_iterator
@@ -22,14 +20,6 @@ HI_MSG = 'Добро пожаловать!'
 ALREADY_MSG = 'И снова добрый день!'
 
 dp = Dispatcher()
-bot = Bot(
-    settings.TG_TOKEN,
-    parse_mode=ParseMode.MARKDOWN,
-    session=AiohttpSession(
-        proxy=settings.TG_PROXY,
-        api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
-    ),
-)
 
 
 @dp.message(CommandStart())
@@ -148,7 +138,7 @@ async def send_typing(message: types.Message, stop: Event):
     async for _ in tick_iterator(5):
         if stop.is_set():
             break
-        await bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
+        await tg_bot.get().send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
 
 
 async def send_answer(message: types.Message):
@@ -170,11 +160,11 @@ async def send_answer(message: types.Message):
     telemetry.get().incr('messages')
 
     if message.voice:
-        file_params = await bot.get_file(message.voice.file_id)
+        file_params = await tg_bot.get().get_file(message.voice.file_id)
         assert file_params.file_path
         file_data = io.BytesIO()
         try:
-            await bot.download_file(file_params.file_path, file_data)
+            await tg_bot.get().download_file(file_params.file_path, file_data)
             file_data.name = 'voice.ogg'
             requeset_text = await http_openai.audio2text(file_data)
         finally:
@@ -201,10 +191,10 @@ async def send_answer(message: types.Message):
 
 
 async def run() -> None:
-    await bot.set_my_commands(commands=[
+    await tg_bot.get().set_my_commands(commands=[
         BotCommand(command='/pay_card', description='Пополнить баланс картой'),
         BotCommand(command='/pay_stars', description='Пополнить баланс звёздами'),
         BotCommand(command='/balance', description='Показать баланс'),
         BotCommand(command='/clean', description='Очистить контекст'),
     ])
-    await dp.start_polling(bot, handle_signals=False)
+    await dp.start_polling(tg_bot.get(), handle_signals=False)
