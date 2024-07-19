@@ -7,7 +7,8 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart, Command, CommandObject
-from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice
+from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asyncpg import UniqueViolationError
 from simple_settings import settings
 
@@ -21,6 +22,14 @@ HI_MSG = 'Добро пожаловать!'
 ALREADY_MSG = 'И снова добрый день!'
 
 dp = Dispatcher()
+bot = Bot(
+    settings.TG_TOKEN,
+    parse_mode=ParseMode.MARKDOWN,
+    session=AiohttpSession(
+        proxy=settings.TG_PROXY,
+        api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
+    ),
+)
 
 
 @dp.message(CommandStart())
@@ -62,8 +71,24 @@ async def cmd_balance(message: types.Message):
     await message.answer('Баланс: {}${:.2f}'.format(get_sign(microdollars), abs(microdollars / 1_000_000)))
 
 
-@dp.message(Command('buy_stars'))
-async def cmd_buy(message: types.Message, command: CommandObject):
+@dp.message(Command('pay_card'))
+async def cmd_buy_card(message: types.Message):
+    assert message.from_user
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text='Пополнить баланс', url='{}{}'.format(
+            settings.PAYMENT_URL_PREFIX,
+            message.from_user.id,
+        ),
+    ))
+    await message.answer(
+        'Для пополнения баланса перейдите по ссылке ниже',
+        reply_markup=builder.as_markup(),
+    )
+
+
+@dp.message(Command('pay_stars'))
+async def cmd_buy_stars(message: types.Message, command: CommandObject):
     assert message.from_user
 
     if command.args is None:
@@ -73,13 +98,13 @@ async def cmd_buy(message: types.Message, command: CommandObject):
             not command.args.isdigit()
             or not 1 <= int(command.args) <= 2500
         ):
-            await message.answer('Введите сумму в формате /buy_stars ЧИСЛО, где ЧИСЛО от 1 до 2500.')
+            await message.answer('Введите сумму в формате /pay_stars ЧИСЛО, где ЧИСЛО от 1 до 2500.')
             return
         amount = int(command.args)
 
     await message.answer_invoice(
         title='Пополнение баланса',
-        description='Для пополнения на другую сумму, используйте /buy_stars ЧИСЛО.',
+        description='Для пополнения на другую сумму, используйте /pay_stars ЧИСЛО.',
         provider_token='',
         currency='XTR',
         prices=[LabeledPrice(label='XTR', amount=amount)],
@@ -120,16 +145,14 @@ async def main_handler(message: types.Message):
 
 async def send_typing(message: types.Message, stop: Event):
     assert message.chat
-    assert message.bot
     async for _ in tick_iterator(5):
         if stop.is_set():
             break
-        await message.bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
+        await bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
 
 
 async def send_answer(message: types.Message):
     assert message.from_user
-    assert message.bot
     user, balance = await asyncio.gather(
         sql_users.get(message.from_user.id),
         sql_wallets.get(message.from_user.id)
@@ -147,11 +170,11 @@ async def send_answer(message: types.Message):
     telemetry.get().incr('messages')
 
     if message.voice:
-        file_params = await message.bot.get_file(message.voice.file_id)
+        file_params = await bot.get_file(message.voice.file_id)
         assert file_params.file_path
         file_data = io.BytesIO()
         try:
-            await message.bot.download_file(file_params.file_path, file_data)
+            await bot.download_file(file_params.file_path, file_data)
             file_data.name = 'voice.ogg'
             requeset_text = await http_openai.audio2text(file_data)
         finally:
@@ -178,16 +201,9 @@ async def send_answer(message: types.Message):
 
 
 async def run() -> None:
-    bot = Bot(
-        settings.TG_TOKEN,
-        parse_mode=ParseMode.MARKDOWN,
-        session=AiohttpSession(
-            proxy=settings.TG_PROXY,
-            api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
-        ),
-    )
     await bot.set_my_commands(commands=[
-        BotCommand(command='/buy_stars', description='Пополнить баланс звёздами'),
+        BotCommand(command='/pay_card', description='Пополнить баланс картой'),
+        BotCommand(command='/pay_stars', description='Пополнить баланс звёздами'),
         BotCommand(command='/balance', description='Показать баланс'),
         BotCommand(command='/clean', description='Очистить контекст'),
     ])
