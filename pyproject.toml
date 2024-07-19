@@ -33,6 +33,7 @@ aiohttp = "^3"
 pytest-asyncio = "^0.21.1"
 pyright = "^1"
 docker = "^7.1.0"
+pytest-cov = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core"]

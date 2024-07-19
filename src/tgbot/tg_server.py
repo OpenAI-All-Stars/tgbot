@@ -182,6 +182,7 @@ async def run() -> None:
         settings.TG_TOKEN,
         parse_mode=ParseMode.MARKDOWN,
         session=AiohttpSession(
+            proxy=settings.TG_PROXY,
             api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
         ),
     )

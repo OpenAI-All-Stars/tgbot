@@ -17,6 +17,7 @@ EXECUTOR_BASE_URL = ''
 TELEGRAM_BASE_URL = ''
 
 PROXY: str | None = None
+TG_PROXY: str | None = None
 
 STATSD_HOST = 'localhost'
 STATSD_PREFIX = 'openai-all-stars.tgbot'
