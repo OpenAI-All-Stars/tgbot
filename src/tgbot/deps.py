@@ -1,5 +1,10 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
+
+from aiogram import Bot
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.client.telegram import TelegramAPIServer
+from aiogram.enums import ParseMode
 from aiohttp import ClientSession
 import httpx
 from simple_settings import settings
@@ -14,6 +19,7 @@ db = RegistryValue[Pool]()
 http_client = RegistryValue[ClientSession]()
 openai_client = RegistryValue[AsyncOpenAI]()
 telemetry = RegistryValue[StatsClient]()
+tg_bot = RegistryValue[Bot]()
 
 
 @asynccontextmanager
@@ -59,6 +65,20 @@ async def use_telemetry() -> AsyncIterator[StatsClient]:
 
 
 @asynccontextmanager
+async def use_tg_bot() -> AsyncIterator[Bot]:
+    bot = Bot(
+        settings.TG_TOKEN,
+        parse_mode=ParseMode.MARKDOWN,
+        session=AiohttpSession(
+            proxy=settings.TG_PROXY,
+            api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
+        ),
+    )
+    tg_bot.set(bot)
+    yield bot
+
+
+@asynccontextmanager
 async def use_all() -> AsyncIterator[None]:
-    async with (use_db(), use_http_client(), use_openai_client(), use_telemetry()):
+    async with (use_db(), use_http_client(), use_openai_client(), use_telemetry(), use_tg_bot()):
         yield
