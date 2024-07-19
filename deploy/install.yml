@@ -73,6 +73,7 @@
           - YANDEX_SEARCH_API_KEY
           - SENTRY_DSN
           - POSTGRES_DSN
+          - PAYMENT_URL_PREFIX
 
     - name: Restart service
       service:
