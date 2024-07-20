@@ -6,6 +6,7 @@ from aiogram import F, Dispatcher, types
 from aiogram.enums import ChatAction
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice, InlineKeyboardButton
+from openai.types.completion_usage import CompletionUsage
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from asyncpg import UniqueViolationError
 from simple_settings import settings
@@ -59,6 +60,39 @@ async def cmd_balance(message: types.Message):
     assert message.from_user
     microdollars = await sql_wallets.get(message.from_user.id)
     await message.answer('Баланс: {}${:.2f}'.format(get_sign(microdollars), abs(microdollars / 1_000_000)))
+
+
+@dp.message(Command('price'))
+async def cmd_price(message: types.Message):
+    await message.answer((
+        'Цены:\n'
+        '- Промт (ваш запрос боту): *${prompt_token:.2f}* за тысячу токенов\\*.\n'
+        '- Ответ: *${completion_token:.2f}* за тысячу токенов\\*.\n'
+        '- Генерация равностороннего изображения: *${image_square:.2f}*.\n'
+        '- Генерация изображения альбомной/портретной развертки: *${image_other:.2f}*.\n'
+        '- Распознование голосового сообщения: *${audio2text:.2f}* за минуту.\n'
+        '\n'
+        '\\*Токены могут включать:\n'
+        '1. Слова целиком. Например, слово "привет" будет одним токеном.\n'
+        '2. Части слов, в зависимости от языка и его сложности. Например, '
+        'длинное сложное слово может быть разложено на несколько токенов.\n'
+        '3. Пробелы и знаки препинания. Пробелы и пунктуация также считаются токенами.'
+        ''.format(
+            prompt_token=price.chatgpt_completion(CompletionUsage(
+                completion_tokens=0,
+                prompt_tokens=1_000,
+                total_tokens=1_000,
+            )) / 1_000_000,
+            completion_token=price.chatgpt_completion(CompletionUsage(
+                completion_tokens=1_000,
+                prompt_tokens=0,
+                total_tokens=1_000,
+            )) / 1_000_000,
+            image_square=price.generate_image('1024x1024') / 1_000_000,
+            image_other=price.generate_image('1792x1024') / 1_000_000,
+            audio2text=price.audio2text(60) / 1_000_000,
+        )
+    ))
 
 
 @dp.message(Command('pay_card'))
@@ -194,6 +228,7 @@ async def run() -> None:
     await tg_bot.get().set_my_commands(commands=[
         BotCommand(command='/pay_card', description='Пополнить баланс картой'),
         BotCommand(command='/pay_stars', description='Пополнить баланс звёздами'),
+        BotCommand(command='/price', description='Цены'),
         BotCommand(command='/balance', description='Показать баланс'),
         BotCommand(command='/clean', description='Очистить контекст'),
     ])
