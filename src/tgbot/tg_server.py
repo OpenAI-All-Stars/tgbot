@@ -66,11 +66,11 @@ async def cmd_balance(message: types.Message):
 async def cmd_price(message: types.Message):
     await message.answer((
         'Цены:\n'
-        '- Промт (ваш запрос боту): *${prompt_token:.2f}* за тысячу токенов\\*.\n'
-        '- Ответ: *${completion_token:.2f}* за тысячу токенов\\*.\n'
-        '- Генерация равностороннего изображения: *${image_square:.2f}*.\n'
-        '- Генерация изображения альбомной/портретной развертки: *${image_other:.2f}*.\n'
-        '- Распознование голосового сообщения: *${audio2text:.2f}* за минуту.\n'
+        '- Промт (ваш запрос боту): *${prompt_token:.3f}* за тысячу токенов\\*.\n'
+        '- Ответ: *${completion_token:.3f}* за тысячу токенов\\*.\n'
+        '- Генерация равностороннего изображения: *${image_square:.3f}*.\n'
+        '- Генерация изображения альбомной/портретной развертки: *${image_other:.3f}*.\n'
+        '- Распознование голосового сообщения: *${audio2text:.3f}* за 10 минут.\n'
         '\n'
         '\\*Токены могут включать:\n'
         '1. Слова целиком. Например, слово "привет" будет одним токеном.\n'
@@ -90,7 +90,7 @@ async def cmd_price(message: types.Message):
             )) / 1_000_000,
             image_square=price.generate_image('1024x1024') / 1_000_000,
             image_other=price.generate_image('1792x1024') / 1_000_000,
-            audio2text=price.audio2text(60) / 1_000_000,
+            audio2text=price.audio2text(10*60) / 1_000_000,
         )
     ))
 
