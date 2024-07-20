@@ -13,5 +13,6 @@ app = FastAPI(lifespan=lifespan)
 async def add_balance_handler(r: AddBalanceRequest):
     await wallet.add(r.user_id, r.microdollars)
     await tg_bot.get().send_message(
+        r.user_id,
         'Зачислено на счёт ${:.2f}'.format(r.dollars),
     )
