@@ -9,7 +9,6 @@ from aiohttp import ClientSession
 import httpx
 from simple_settings import settings
 from openai import AsyncOpenAI
-from statsd import StatsClient
 
 from tgbot.pool_wrapper import Pool, create_pool
 from tgbot.registry import RegistryValue
@@ -18,7 +17,6 @@ from tgbot.registry import RegistryValue
 db = RegistryValue[Pool]()
 http_client = RegistryValue[ClientSession]()
 openai_client = RegistryValue[AsyncOpenAI]()
-telemetry = RegistryValue[StatsClient]()
 tg_bot = RegistryValue[Bot]()
 
 
@@ -55,16 +53,6 @@ async def use_openai_client() -> AsyncIterator[AsyncOpenAI]:
 
 
 @asynccontextmanager
-async def use_telemetry() -> AsyncIterator[StatsClient]:
-    c = StatsClient(host=settings.STATSD_HOST, prefix=settings.STATSD_PREFIX)
-    telemetry.set(c)
-    try:
-        yield c
-    finally:
-        c.close()
-
-
-@asynccontextmanager
 async def use_tg_bot() -> AsyncIterator[Bot]:
     bot = Bot(
         settings.TG_TOKEN,
@@ -80,5 +68,5 @@ async def use_tg_bot() -> AsyncIterator[Bot]:
 
 @asynccontextmanager
 async def use_all() -> AsyncIterator[None]:
-    async with (use_db(), use_http_client(), use_openai_client(), use_telemetry(), use_tg_bot()):
+    async with (use_db(), use_http_client(), use_openai_client(), use_tg_bot()):
         yield
