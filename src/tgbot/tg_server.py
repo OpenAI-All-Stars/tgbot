@@ -12,8 +12,8 @@ from asyncpg import UniqueViolationError
 from simple_settings import settings
 
 from tgbot import price
-from tgbot.deps import db, tg_bot
-from tgbot.repositories import http_openai, http_telegraf, sql_chat_messages, sql_users, sql_wallets
+from tgbot.deps import telemetry, db, tg_bot
+from tgbot.repositories import http_openai, sql_chat_messages, sql_users, sql_wallets
 from tgbot.servicecs import ai, wallet
 from tgbot.utils import get_sign, tick_iterator
 
@@ -156,7 +156,6 @@ async def successful_payment_handler(message: types.Message):
 
 @dp.message()
 async def main_handler(message: types.Message):
-    http_telegraf.send('messages', 1)
     if message.from_user is None:
         return None
 
@@ -191,6 +190,8 @@ async def send_answer(message: types.Message):
             'Для продолжения работы с ботом вам необходимо пополнить баланс.'
         ))
         return
+
+    telemetry.get().incr('messages')
 
     if message.voice:
         file_params = await tg_bot.get().get_file(message.voice.file_id)
