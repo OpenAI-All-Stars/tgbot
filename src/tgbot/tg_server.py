@@ -156,6 +156,7 @@ async def successful_payment_handler(message: types.Message):
 
 @dp.message()
 async def main_handler(message: types.Message):
+    telemetry.get().incr('messages')
     if message.from_user is None:
         return None
 
@@ -190,8 +191,6 @@ async def send_answer(message: types.Message):
             'Для продолжения работы с ботом вам необходимо пополнить баланс.'
         ))
         return
-
-    telemetry.get().incr('messages')
 
     if message.voice:
         file_params = await tg_bot.get().get_file(message.voice.file_id)
