@@ -19,8 +19,8 @@ TELEGRAM_BASE_URL = ''
 PROXY: str | None = None
 TG_PROXY: str | None = None
 
-TELEGRAF_URL = 'http://localhost:8080'
-TELEGRAF_PREFIX = 'tgbot.'
+STATSD_HOST = 'localhost'
+STATSD_PREFIX = 'openai-all-stars.tgbot'
 
 SENTRY_DSN = ''
 
