@@ -1,7 +1,7 @@
 CREATE TABLE users
 (
-    chat_id          INTEGER UNIQUE,
-    user_id          INTEGER UNIQUE,
+    chat_id          BIGINT UNIQUE,
+    user_id          BIGINT UNIQUE,
     full_name        TEXT,
     username         TEXT,
     invite_code      TEXT,
@@ -10,7 +10,7 @@ CREATE TABLE users
 
 CREATE TABLE chat_messages
 (
-    chat_id          INTEGER,
+    chat_id          BIGINT,
     body             TEXT,
     created_at       timestamptz NOT NULL DEFAULT NOW()
 );
