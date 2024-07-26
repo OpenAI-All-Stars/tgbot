@@ -1,8 +1,12 @@
 import asyncio
 import functools
+import io
 import logging
 import time
-from typing import AsyncIterator, Awaitable, Callable
+from typing import AsyncIterator, Awaitable, Callable, Iterable
+
+
+import pymupdf
 
 
 logger = logging.getLogger(__name__)
@@ -44,3 +48,20 @@ class worker:
             except Exception as e:
                 logger.exception(e)
             await asyncio.sleep(self.timeout_s)
+
+
+async def convert_pdf_to_text(data: bytes | io.BytesIO) -> str:
+    return await asyncio.get_running_loop().run_in_executor(
+        None,
+        sync_convert_pdf_to_text,
+        data,
+    )
+
+
+def sync_convert_pdf_to_text(data: bytes | io.BytesIO) -> str:
+    doc = pymupdf.open(stream=data, filetype='pdf')
+    pages: Iterable[pymupdf.Page] = doc.pages()
+    return ''.join(
+        page.get_textpage().extractText()
+        for page in pages
+    )
