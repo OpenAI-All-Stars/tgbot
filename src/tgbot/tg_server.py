@@ -8,6 +8,8 @@ from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import BotCommand, BufferedInputFile, LabeledPrice, InlineKeyboardButton
 from openai.types.completion_usage import CompletionUsage
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.enums import ParseMode
 from asyncpg import UniqueViolationError
 from simple_settings import settings
 
@@ -55,16 +57,34 @@ async def cmd_clean(message: types.Message):
     await message.answer('Контекст очищен')
 
 
-@dp.message(Command('balance'))
-async def cmd_balance(message: types.Message):
+@dp.message(Command('pay'))
+async def cmd_pay(message: types.Message):
     assert message.from_user
     microdollars = await sql_wallets.get(message.from_user.id)
-    await message.answer('Баланс: {}${:.2f}'.format(get_sign(microdollars), abs(microdollars / 1_000_000)))
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text='Пополнить баланс картой', url='{}{}'.format(
+            settings.PAYMENT_URL_PREFIX,
+            message.from_user.id,
+        ),
+    ))
+    builder.row(InlineKeyboardButton(
+        text='Пополнить баланс звёздами', callback_data='pay_stars',
+    ))
+    builder.row(InlineKeyboardButton(
+        text='Цены', callback_data='price',
+    ))
+    await message.answer(
+        'Баланс: {}${:.2f}'.format(get_sign(microdollars), abs(microdollars / 1_000_000)),
+        reply_markup=builder.as_markup(),
+    )
 
 
-@dp.message(Command('price'))
-async def cmd_price(message: types.Message):
-    await message.answer((
+@dp.callback_query(F.data == 'price')
+async def callback_price(callback: types.CallbackQuery):
+    if not isinstance(callback.message, types.Message):
+        return
+    await callback.message.answer((
         'Цены:\n'
         '- Промт (ваш запрос боту): *${prompt_token:.3f}* за тысячу токенов\\*.\n'
         '- Ответ: *${completion_token:.3f}* за тысячу токенов\\*.\n'
@@ -95,24 +115,24 @@ async def cmd_price(message: types.Message):
     ))
 
 
-@dp.message(Command('pay_card'))
-async def cmd_buy_card(message: types.Message):
-    assert message.from_user
-    builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(
-        text='Пополнить баланс', url='{}{}'.format(
-            settings.PAYMENT_URL_PREFIX,
-            message.from_user.id,
-        ),
-    ))
-    await message.answer(
-        'Для пополнения баланса перейдите по ссылке ниже',
-        reply_markup=builder.as_markup(),
+@dp.callback_query(F.data == 'pay_stars')
+async def callback_pay_stars(callback: types.CallbackQuery):
+    if not isinstance(callback.message, types.Message):
+        return
+    assert callback.message.from_user
+    amount = 50
+    await callback.message.answer_invoice(
+        title='Пополнение баланса',
+        description='/pay_stars ЧИСЛО - пополнение на другую сумму',
+        provider_token='',
+        currency='XTR',
+        prices=[LabeledPrice(label='XTR', amount=amount)],
+        payload=str(callback.message.from_user.id),
     )
 
 
 @dp.message(Command('pay_stars'))
-async def cmd_buy_stars(message: types.Message, command: CommandObject):
+async def cmd_pay_stars(message: types.Message, command: CommandObject):
     assert message.from_user
 
     if command.args is None:
@@ -128,7 +148,7 @@ async def cmd_buy_stars(message: types.Message, command: CommandObject):
 
     await message.answer_invoice(
         title='Пополнение баланса',
-        description='Для пополнения на другую сумму, используйте /pay_stars ЧИСЛО.',
+        description='/pay_stars ЧИСЛО - пополнение на другую сумму',
         provider_token='',
         currency='XTR',
         prices=[LabeledPrice(label='XTR', amount=amount)],
@@ -220,15 +240,18 @@ async def send_answer(message: types.Message):
                 BufferedInputFile(answer.encode(), filename='answer.txt'),
             )
         else:
-            await message.answer(answer)
+            try:
+                await message.answer(answer)
+            except TelegramBadRequest as e:
+                if 'can\'t parse entities' in str(e):
+                    await message.answer(answer, parse_mode=ParseMode.HTML)
+                else:
+                    raise
 
 
 async def run() -> None:
     await tg_bot.get().set_my_commands(commands=[
-        BotCommand(command='/pay_card', description='Пополнить баланс картой'),
-        BotCommand(command='/pay_stars', description='Пополнить баланс звёздами'),
-        BotCommand(command='/price', description='Цены'),
-        BotCommand(command='/balance', description='Показать баланс'),
+        BotCommand(command='/pay', description='Пополнить баланс'),
         BotCommand(command='/clean', description='Очистить контекст'),
     ])
     await dp.start_polling(tg_bot.get(), handle_signals=False)
