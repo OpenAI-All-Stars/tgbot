@@ -13,7 +13,7 @@ from aiogram.enums import ParseMode
 from asyncpg import UniqueViolationError
 from simple_settings import settings
 
-from tgbot import price
+from tgbot import price, sentry_aiogram_integration
 from tgbot.deps import telemetry, db, tg_bot
 from tgbot.repositories import http_openai, sql_chat_messages, sql_users, sql_wallets
 from tgbot.servicecs import ai, wallet
@@ -23,6 +23,7 @@ HI_MSG = 'Добро пожаловать!'
 ALREADY_MSG = 'И снова добрый день!'
 
 dp = Dispatcher()
+sentry_aiogram_integration.init(dp)
 
 
 @dp.message(CommandStart())
