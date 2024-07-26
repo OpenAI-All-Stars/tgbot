@@ -1,6 +1,7 @@
 import asyncio
 from asyncio import Event
 import io
+from pathlib import Path
 
 from aiogram import F, Dispatcher, types
 from aiogram.enums import ChatAction
@@ -17,10 +18,14 @@ from tgbot import price, sentry_aiogram_integration
 from tgbot.deps import telemetry, db, tg_bot
 from tgbot.repositories import http_openai, sql_chat_messages, sql_users, sql_wallets
 from tgbot.servicecs import ai, wallet
-from tgbot.utils import get_sign, tick_iterator
+from tgbot.utils import convert_pdf_to_text, get_sign, tick_iterator
 
 HI_MSG = 'Добро пожаловать!'
 ALREADY_MSG = 'И снова добрый день!'
+NEED_PAY_MSG = (
+    'Недостаточно средств на счету. '
+    'Для продолжения работы с ботом вам необходимо пополнить баланс.'
+)
 
 dp = Dispatcher()
 sentry_aiogram_integration.init(dp)
@@ -175,6 +180,32 @@ async def successful_payment_handler(message: types.Message):
     )
 
 
+@dp.message(F.document)
+async def handle_document(message: types.Message):
+    assert message.from_user
+    assert message.document
+    assert message.document.file_name
+    balance = await sql_wallets.get(message.from_user.id)
+    if balance <= 0:
+        await message.answer(NEED_PAY_MSG)
+        return
+    file = await tg_bot.get().get_file(message.document.file_id)
+    if file.file_path is None:
+        return
+    data = io.BytesIO()
+    await tg_bot.get().download_file(file.file_path, data)
+    match Path(message.document.file_name).suffix.lower():
+        case '.txt':
+            text = data.read().decode()
+        case '.pdf':
+            text = await convert_pdf_to_text(data)
+        case _:
+            await message.answer('Не удалось прочесть файл. Доступные форматы: txt, pdf.')
+            return
+    await ai.append_text(message.from_user.id, text)
+    await message.answer('Файл прочитан.')
+
+
 @dp.message()
 async def main_handler(message: types.Message):
     telemetry.get().incr('messages')
@@ -207,10 +238,7 @@ async def send_answer(message: types.Message):
         await message.answer('Ошибка. Вызовите команду /start.')
         return
     if balance <= 0:
-        await message.answer((
-            'Недостаточно средств на счету. '
-            'Для продолжения работы с ботом вам необходимо пополнить баланс.'
-        ))
+        await message.answer(NEED_PAY_MSG)
         return
 
     if message.voice:

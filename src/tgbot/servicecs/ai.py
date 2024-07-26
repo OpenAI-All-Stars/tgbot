@@ -153,6 +153,13 @@ async def get_chat_state(message: types.Message) -> ChatState:
     return ChatState(message, messages)
 
 
+async def append_text(user_id: int, text: str):
+    await sql_chat_messages.create(user_id, user_id, ChatCompletionUserMessageParam(
+        role='user',
+        content=text,
+    ))
+
+
 class BadCallException(Exception):
     func_name: str
     message: str
