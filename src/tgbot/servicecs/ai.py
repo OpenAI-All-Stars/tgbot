@@ -57,7 +57,7 @@ class ChatState:
             content=(
                 'Доступная разметка текста: '
                 r'**bold**, *italic*, `code`, ~~strike~~, ```c++\ncode```.'
-                r'Спец символы экранировать так \*'
+                'Если нужен отдельно спец-символ из разметки, то экранируй его обратным слешем.'
             ),
         )] + self.messages.copy()
         resp = await http_openai.send(str(self.chat_id), messages)
