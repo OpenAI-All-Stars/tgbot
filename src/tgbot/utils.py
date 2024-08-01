@@ -11,7 +11,7 @@ import pymupdf
 
 
 logger = logging.getLogger(__name__)
-HEADER_REGEX = re.compile(r'^#+\s*(.*)$', re.MULTILINE)
+HEADER_REGEX = re.compile(r'^###\s*(.*)$', re.MULTILINE)
 
 
 def async_command(f: Callable) -> Callable:
