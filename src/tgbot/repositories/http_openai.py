@@ -18,6 +18,8 @@ class Func(str, Enum):
     web_search = 'web_search'
     web_read = 'web_read'
     create_image = 'create_image'
+    python = 'python'
+    python_files = 'python_files'
 
 
 FUNCTIONS = [
@@ -75,10 +77,42 @@ FUNCTIONS = [
                 'size': {
                     'type': 'string',
                     'description': 'Image size',
-                    'enum': ["1024x1024", "1792x1024", "1024x1792"]
+                    'enum': ['1024x1024', '1792x1024', '1024x1792']
                 },
             },
             'required': ['description', 'size'],
+        },
+    ),
+    Function(
+        name=Func.python,
+        description='Execute python code. Returns log and created files.',
+        parameters={
+            'type': 'object',
+            'properties': {
+                'code': {
+                    'type': 'string',
+                    'description': 'Python code body',
+                },
+            },
+            'required': ['code'],
+        },
+    ),
+    Function(
+        name=Func.python_files,
+        description='Get files created by python code running previous time.',
+        parameters={
+            'type': 'object',
+            'properties': {
+                'filenames': {
+                    'type': 'array',
+                    'description': 'List of file names',
+                    'items': {
+                        'type': 'string',
+                        'description': 'Name of the file'
+                    }
+                },
+            },
+            'required': ['filenames'],
         },
     ),
 ]

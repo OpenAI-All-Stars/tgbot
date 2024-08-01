@@ -57,6 +57,13 @@
         SIMPLE_SETTINGS: "{{ service_name }}.settings.prod"
         POSTGRES_DSN: "{{ lookup('env', 'POSTGRES_DSN') }}"
 
+    - name: Pre run
+      command:
+        chdir: "/var/lib/{{ service_name }}"
+        cmd: "{{ env_path }}/bin/{{ service_name }} pre-run"
+      environment:
+        SIMPLE_SETTINGS: "{{ service_name }}.settings.prod"
+
     - name: Create systemd file
       template:
         src: system.service.j2
