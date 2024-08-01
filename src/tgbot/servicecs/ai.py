@@ -11,7 +11,7 @@ from simple_settings import settings
 
 from tgbot import price
 from tgbot.clients import http_yandex_search
-from tgbot.repositories import bash, http_openai, http_text_browser, sql_chat_messages
+from tgbot.repositories import bash, docker, http_openai, http_text_browser, sql_chat_messages
 from tgbot.repositories.http_openai import Func
 from tgbot.servicecs import wallet
 
@@ -27,31 +27,31 @@ class ChatState:
         self.chat_id = message.chat.id
         self.messages = messages
 
-    async def send(self, text: str) -> bytes | str:
+    async def send(self, text: str) -> dict | bytes | str:
         new_message = ChatCompletionUserMessageParam(role='user', content=text)
         self.messages.append(new_message)
-        try:
-            for _ in range(100):
+        for _ in range(10):
+            try:
                 answer = await self._send_messages()
                 if answer is not None:
                     return answer
-        except BadCallException as e:
-            self.messages.append(ChatCompletionFunctionMessageParam(
-                role='function',
-                name=e.func_name,
-                content=e.message,
-            ))
-            await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
-        except Exception as e:
-            logger.exception(e)
-            self.messages.append(ChatCompletionSystemMessageParam(
-                role='system',
-                content='неизвестная ошибка',
-            ))
-            await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
-        return 'ошибка, попробуйте другой запрос'
+            except BadCallException as e:
+                self.messages.append(ChatCompletionFunctionMessageParam(
+                    role='function',
+                    name=e.func_name,
+                    content=e.message,
+                ))
+                await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
+            except Exception as e:
+                logger.exception(e)
+                self.messages.append(ChatCompletionSystemMessageParam(
+                    role='system',
+                    content='неизвестная ошибка',
+                ))
+                await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
+        return 'ошибка'
 
-    async def _send_messages(self) -> bytes | str | None:
+    async def _send_messages(self) -> dict | bytes | str | None:
         messages = [ChatCompletionSystemMessageParam(
             role='system',
             content=(
@@ -141,6 +141,36 @@ class ChatState:
                     content='done',
                 ))
                 return data
+            case Func.python:
+                raw_args = function_call['arguments']
+                function_args = json.loads(raw_args)
+                code = function_args.get('code')
+                if not code:
+                    raise ArgRequired('python', 'code')
+                await self.message.answer('исполняю python код..')
+                log, files = await docker.run_code(code, '/tmp/tgbot/docker-crumbs', 10)
+                self.messages.append(ChatCompletionFunctionMessageParam(
+                    role='function',
+                    name=function_call['name'],
+                    content=json.dumps({
+                        'log': log,
+                        'files': list(files.keys()),
+                    }),
+                ))
+                docker_files.save(self.user_id, files)
+                return None
+            case Func.python_files:
+                raw_args = function_call['arguments']
+                function_args = json.loads(raw_args)
+                filenames = function_args.get('filenames')
+                if not filenames:
+                    raise ArgRequired('python_files', 'filenames')
+                self.messages.append(ChatCompletionFunctionMessageParam(
+                    role='function',
+                    name=function_call['name'],
+                    content='done',
+                ))
+                return docker_files.load(self.user_id)
             case _:
                 raise FuncUnknow(function_call['name'])
 

@@ -20,6 +20,7 @@ from tgbot.repositories import http_openai, sql_chat_messages, sql_users, sql_wa
 from tgbot.servicecs import ai, wallet
 from tgbot.utils import convert_pdf_to_text, get_sign, tick_iterator
 
+
 HI_MSG = 'Добро пожаловать!'
 ALREADY_MSG = 'И снова добрый день!'
 NEED_PAY_MSG = (
@@ -259,7 +260,19 @@ async def send_answer(message: types.Message):
 
     state = await ai.get_chat_state(message)
     answer = await state.send(requeset_text)
-    if isinstance(answer, bytes):
+    if isinstance(answer, dict):
+        for name, body in answer.items():
+            if isinstance(body, str):
+                body = body.encode()
+            if Path(name).suffix.lower() in ['.jpg', '.png']:
+                await message.answer_photo(
+                    BufferedInputFile(body, name),
+                )
+            else:
+                await message.answer_document(
+                    BufferedInputFile(body, filename=name),
+                )
+    elif isinstance(answer, bytes):
         await message.answer_photo(
             BufferedInputFile(answer, 'answer.jpg'),
         )
