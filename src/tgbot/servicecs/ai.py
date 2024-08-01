@@ -8,12 +8,14 @@ from openai.types.chat.chat_completion_system_message_param import ChatCompletio
 from openai.types.chat.chat_completion_user_message_param import ChatCompletionUserMessageParam
 from openai.types.chat.chat_completion_assistant_message_param import FunctionCall, ChatCompletionAssistantMessageParam
 from simple_settings import settings
+from pylatexenc.latex2text import LatexNodes2Text
 
 from tgbot import price
 from tgbot.clients import http_yandex_search
 from tgbot.repositories import bash, docker, docker_files, http_openai, http_text_browser, sql_chat_messages
 from tgbot.repositories.http_openai import Func
 from tgbot.servicecs import wallet
+from tgbot.utils import fix_invalid_markdown
 
 
 logger = logging.getLogger(__name__)
@@ -79,7 +81,12 @@ class ChatState:
         function_call = assistant_message.get('function_call')
         if not function_call:
             answer = assistant_message.get('content') or ''
-            return answer
+            try:
+                answer = fix_invalid_markdown(answer)
+                return LatexNodes2Text().latex_to_text(answer)
+            except Exception as e:
+                logger.exception(e)
+                return answer
 
         match function_call['name']:
             case Func.bash:

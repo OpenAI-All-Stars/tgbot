@@ -2,6 +2,7 @@ import asyncio
 import functools
 import io
 import logging
+import re
 import time
 from typing import AsyncIterator, Awaitable, Callable, Iterable
 
@@ -10,6 +11,7 @@ import pymupdf
 
 
 logger = logging.getLogger(__name__)
+HEADER_REGEX = re.compile(r'^#+\s*(.*)$', re.MULTILINE)
 
 
 def async_command(f: Callable) -> Callable:
@@ -65,3 +67,7 @@ def sync_convert_pdf_to_text(data: bytes | io.BytesIO) -> str:
         page.get_textpage().extractText()
         for page in pages
     )
+
+
+def fix_invalid_markdown(text: str) -> str:
+    return HEADER_REGEX.sub(lambda m: f'**{m.group(1)}**', text)
