@@ -11,7 +11,7 @@ from simple_settings import settings
 
 from tgbot import price
 from tgbot.clients import http_yandex_search
-from tgbot.repositories import bash, docker, http_openai, http_text_browser, sql_chat_messages
+from tgbot.repositories import bash, docker, docker_files, http_openai, http_text_browser, sql_chat_messages
 from tgbot.repositories.http_openai import Func
 from tgbot.servicecs import wallet
 
