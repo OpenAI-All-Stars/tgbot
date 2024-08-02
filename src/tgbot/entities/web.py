@@ -5,6 +5,7 @@ from pydantic.dataclasses import dataclass
 class AddBalanceRequest:
     user_id: int
     microdollars: int
+    message: str | None = None
 
     @property
     def dollars(self) -> float:
