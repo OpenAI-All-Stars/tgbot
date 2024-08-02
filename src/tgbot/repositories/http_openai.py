@@ -85,30 +85,23 @@ FUNCTIONS = [
     ),
     Function(
         name=Func.python,
-        description='Execute python code. Returns log and created files.',
-        parameters={
-            'type': 'object',
-            'properties': {
-                'code': {
-                    'type': 'string',
-                    'description': 'Python code body',
-                },
-            },
-            'required': ['code'],
-        },
+        description=(
+            'Execute python code in docker. Returns log. '
+            'Create files only in the current folder.'
+        ),
+        parameters={},
     ),
     Function(
         name=Func.python_files,
-        description='Get files created by python code running previous time.',
+        description='Send files to user created by python code running previous time.',
         parameters={
             'type': 'object',
             'properties': {
                 'filenames': {
                     'type': 'array',
-                    'description': 'List of file names',
+                    'description': 'List of file names in app root',
                     'items': {
-                        'type': 'string',
-                        'description': 'Name of the file'
+                        'type': 'string'
                     }
                 },
             },

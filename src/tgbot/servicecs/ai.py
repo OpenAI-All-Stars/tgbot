@@ -32,7 +32,7 @@ class ChatState:
     async def send(self, text: str) -> dict | bytes | str:
         new_message = ChatCompletionUserMessageParam(role='user', content=text)
         self.messages.append(new_message)
-        for _ in range(10):
+        for _ in range(5):
             try:
                 answer = await self._send_messages()
                 if answer is not None:
@@ -48,7 +48,7 @@ class ChatState:
                 logger.exception(e)
                 self.messages.append(ChatCompletionSystemMessageParam(
                     role='system',
-                    content='неизвестная ошибка',
+                    content=str(e),
                 ))
                 await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
         return 'ошибка'
@@ -58,8 +58,8 @@ class ChatState:
             role='system',
             content=(
                 'Доступная разметка текста: '
-                r'**bold**, *italic*, `code`, ~~strike~~, ```c++\ncode```.'
-                'Если нужен отдельно спец-символ из разметки, то экранируй его обратным слешем.'
+                r'**bold**, *italic*, `code`, ~~strike~~, ```c++\ncode```, [Link text Here](https://link-url-here.org).'
+                'Доступно экранирование спец-символов из разметки обратным слешем.'
             ),
         )] + self.messages.copy()
         resp = await http_openai.send(str(self.chat_id), messages)
@@ -149,13 +149,9 @@ class ChatState:
                 ))
                 return data
             case Func.python:
-                raw_args = function_call['arguments']
-                function_args = json.loads(raw_args)
-                code = function_args.get('code')
-                if not code:
-                    raise ArgRequired('python', 'code')
+                code = function_call['arguments']
                 await self.message.answer('исполняю python код..')
-                log, files = await docker.run_code(code, '/tmp/tgbot/docker-crumbs', 10)
+                log, files = await docker.run_code(code, 10)
                 self.messages.append(ChatCompletionFunctionMessageParam(
                     role='function',
                     name=function_call['name'],
