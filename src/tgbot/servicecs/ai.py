@@ -60,6 +60,8 @@ class ChatState:
                 'Доступная разметка текста: '
                 r'**bold**, *italic*, `code`, ~~strike~~, ```c++\ncode```, [Link text Here](https://link-url-here.org).'
                 'Доступно экранирование спец-символов из разметки обратным слешем.'
+                'Если пользователь просит построить график или создать изображение, '
+                'сразу отправь файл без предварительного показа изображения в сообщении.'
             ),
         )] + self.messages.copy()
         resp = await http_openai.send(str(self.chat_id), messages)
