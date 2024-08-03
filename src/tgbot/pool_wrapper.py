@@ -10,6 +10,9 @@ _current_connection = contextvars.ContextVar('current_connection')
 class Pool(asyncpg.Pool):
     @asynccontextmanager
     async def transaction(self):
+        if _current_connection.get(None):
+            yield
+            return
         async with self.acquire() as con:
             async with con.transaction():
                 token = _current_connection.set(con)

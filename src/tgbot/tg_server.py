@@ -21,7 +21,6 @@ from tgbot.servicecs import ai, wallet
 from tgbot.utils import convert_pdf_to_text, get_sign, tick_iterator
 
 
-HI_MSG = 'Добро пожаловать!'
 ALREADY_MSG = 'И снова добрый день!'
 NEED_PAY_MSG = (
     'Недостаточно средств на счету. '
@@ -53,9 +52,10 @@ async def cmd_start(message: types.Message):
                 message.from_user.id,
                 0,
             )
+            await wallet.add(message.from_user.id, 100_000)
     except UniqueViolationError:
         pass
-    await message.answer(HI_MSG)
+    await message.answer('Добро пожаловать! За регистрацию вам зачислено $0.1!')
 
 
 @dp.message(Command('clean'))

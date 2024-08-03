@@ -7,7 +7,7 @@ import pytest
 @pytest.mark.parametrize(
     'start_text, response_expected, users_expected',
     [
-        ('/start', 'Добро пожаловать!', [{
+        ('/start', 'Добро пожаловать! За регистрацию вам зачислено $0.1!', [{
             'user_id': 111,
             'full_name': 'cat',
             'username': '',
