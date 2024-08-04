@@ -33,6 +33,7 @@ sentry_aiogram_integration.init(dp)
 
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
+    telemetry.get().incr('messages.start')
     if message.text is None or message.from_user is None:
         return
 
@@ -60,12 +61,14 @@ async def cmd_start(message: types.Message):
 
 @dp.message(Command('clean'))
 async def cmd_clean(message: types.Message):
+    telemetry.get().incr('messages.clean')
     await sql_chat_messages.clean(message.chat.id)
     await message.answer('Контекст очищен')
 
 
 @dp.message(Command('pay'))
 async def cmd_pay(message: types.Message):
+    telemetry.get().incr('messages.pay')
     assert message.from_user
     microdollars = await sql_wallets.get(message.from_user.id)
     builder = InlineKeyboardBuilder()
@@ -89,6 +92,7 @@ async def cmd_pay(message: types.Message):
 
 @dp.callback_query(F.data == 'price')
 async def callback_price(callback: types.CallbackQuery):
+    telemetry.get().incr('messages.price')
     if not isinstance(callback.message, types.Message):
         return
     await callback.message.answer((
@@ -183,6 +187,7 @@ async def successful_payment_handler(message: types.Message):
 
 @dp.message(F.document)
 async def handle_document(message: types.Message):
+    telemetry.get().incr('messages.document')
     assert message.from_user
     assert message.document
     assert message.document.file_name
@@ -209,7 +214,7 @@ async def handle_document(message: types.Message):
 
 @dp.message()
 async def main_handler(message: types.Message):
-    telemetry.get().incr('messages')
+    telemetry.get().incr('messages.main')
     if message.from_user is None:
         return None
 
