@@ -94,6 +94,6 @@ async def test_success(tg_server, settings, mock_server, db):
         'parse_mode': 'Markdown',
     }]
     got = await db.fetch('SELECT * FROM wallets_history')
-    assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -240, 'created_at': ANY}]
+    assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -150, 'created_at': ANY}]
     got = await db.fetch('SELECT * FROM wallets')
-    assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -239}]
+    assert [dict(x) for x in got] == [{'user_id': 111, 'microdollars': -149}]
