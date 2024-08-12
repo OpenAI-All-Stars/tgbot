@@ -9,7 +9,7 @@ COMMISSION_COEFFICIENT = 1.2
 def chatgpt_completion(usage: CompletionUsage | None) -> int:
     if not usage:
         return 0
-    return int((usage.prompt_tokens * 5 + usage.completion_tokens * 15) * COMMISSION_COEFFICIENT)
+    return int((usage.prompt_tokens * 2.5 + usage.completion_tokens * 10) * COMMISSION_COEFFICIENT)
 
 
 def generate_image(size: ImageSizeType) -> int:
