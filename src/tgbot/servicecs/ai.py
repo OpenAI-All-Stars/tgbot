@@ -8,7 +8,6 @@ from openai.types.chat.chat_completion_system_message_param import ChatCompletio
 from openai.types.chat.chat_completion_user_message_param import ChatCompletionUserMessageParam
 from openai.types.chat.chat_completion_assistant_message_param import FunctionCall, ChatCompletionAssistantMessageParam
 from simple_settings import settings
-from pylatexenc.latex2text import LatexNodes2Text
 
 from tgbot import price
 from tgbot.clients import http_yandex_search
@@ -84,8 +83,7 @@ class ChatState:
         if not function_call:
             answer = assistant_message.get('content') or ''
             try:
-                answer = fix_invalid_markdown(answer)
-                return LatexNodes2Text().latex_to_text(answer)
+                return fix_invalid_markdown(answer)
             except Exception as e:
                 logger.exception(e)
                 return answer
