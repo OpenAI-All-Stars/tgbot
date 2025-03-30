@@ -135,7 +135,7 @@ async def callback_price(callback: types.CallbackQuery):
 async def callback_pay_stars(callback: types.CallbackQuery):
     if not isinstance(callback.message, types.Message):
         return
-    assert callback.message.from_user
+    assert callback.from_user
     amount = 50
     await callback.message.answer_invoice(
         title='Пополнение баланса',
@@ -143,7 +143,7 @@ async def callback_pay_stars(callback: types.CallbackQuery):
         provider_token='',
         currency='XTR',
         prices=[LabeledPrice(label='XTR', amount=amount)],
-        payload=str(callback.message.from_user.id),
+        payload=str(callback.from_user.id),
     )
 
 
