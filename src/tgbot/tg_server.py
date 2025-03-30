@@ -33,6 +33,9 @@ sentry_aiogram_integration.init(dp)
 
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
+    if message.chat.type != 'private':
+        return
+
     telemetry.get().incr('messages.start')
     if message.text is None or message.from_user is None:
         return
@@ -68,6 +71,8 @@ async def cmd_clean(message: types.Message):
 
 @dp.message(Command('pay'))
 async def cmd_pay(message: types.Message):
+    if message.chat.type != 'private':
+        return
     telemetry.get().incr('messages.pay')
     assert message.from_user
     microdollars = await sql_wallets.get(message.from_user.id)
@@ -144,6 +149,8 @@ async def callback_pay_stars(callback: types.CallbackQuery):
 
 @dp.message(Command('pay_stars'))
 async def cmd_pay_stars(message: types.Message, command: CommandObject):
+    if message.chat.type != 'private':
+        return
     assert message.from_user
 
     if command.args is None:
@@ -191,9 +198,11 @@ async def handle_document(message: types.Message):
     assert message.from_user
     assert message.document
     assert message.document.file_name
+    is_group = message.chat.type in ['group', 'supergroup']
+    send_response = message.reply if is_group else message.answer
     balance = await sql_wallets.get(message.from_user.id)
     if balance <= 0:
-        await message.answer(NEED_PAY_MSG)
+        await send_response(NEED_PAY_MSG)
         return
     file = await tg_bot.get().get_file(message.document.file_id)
     if file.file_path is None:
@@ -206,18 +215,33 @@ async def handle_document(message: types.Message):
         case '.pdf':
             text = await convert_pdf_to_text(data)
         case _:
-            await message.answer('Не удалось прочесть файл. Доступные форматы: txt, pdf.')
+            await send_response('Не удалось прочесть файл. Доступные форматы: txt, pdf.')
             return
     await ai.append_text(message.from_user.id, text)
-    await message.answer('Файл прочитан.')
+    await send_response('Файл прочитан.')
 
 
 @dp.message()
 async def main_handler(message: types.Message):
-    telemetry.get().incr('messages.main')
+    assert message.bot
     if message.from_user is None:
         return None
 
+    me = await message.bot.me()
+
+    if message.chat.type in ['group', 'supergroup']:
+        if message.text and f"@{me.username}" in message.text:
+            pass
+        elif (
+            message.reply_to_message
+            and message.reply_to_message.from_user
+            and message.reply_to_message.from_user.id == me.id
+        ):
+            pass
+        else:
+            return
+
+    telemetry.get().incr('messages.main')
     stop = Event()
     try:
         asyncio.create_task(send_typing(message, stop))
@@ -236,15 +260,21 @@ async def send_typing(message: types.Message, stop: Event):
 
 async def send_answer(message: types.Message):
     assert message.from_user
+
+    is_group = message.chat.type in ['group', 'supergroup']
+    send_response = message.reply if is_group else message.answer
+    send_photo_response = message.reply_photo if is_group else message.answer_photo
+    send_document_response = message.reply_document if is_group else message.answer_document
+
     user, balance = await asyncio.gather(
         sql_users.get(message.from_user.id),
         sql_wallets.get(message.from_user.id)
     )
     if not user:
-        await message.answer('Ошибка. Вызовите команду /start.')
+        await send_response('Вы не зарегистрированы в боте. Вызовите команду /start.')
         return
     if balance <= 0:
-        await message.answer(NEED_PAY_MSG)
+        await send_response(NEED_PAY_MSG)
         return
 
     if message.voice:
@@ -270,28 +300,28 @@ async def send_answer(message: types.Message):
             if isinstance(body, str):
                 body = body.encode()
             if Path(name).suffix.lower() in ['.jpg', '.png']:
-                await message.answer_photo(
+                await send_photo_response(
                     BufferedInputFile(body, name),
                 )
             else:
-                await message.answer_document(
+                await send_document_response(
                     BufferedInputFile(body, filename=name),
                 )
     elif isinstance(answer, bytes):
-        await message.answer_photo(
+        await send_photo_response(
             BufferedInputFile(answer, 'answer.jpg'),
         )
     elif isinstance(answer, str):
         if len(answer) > 4096:
-            await message.answer_document(
+            await send_document_response(
                 BufferedInputFile(answer.encode(), filename='answer.txt'),
             )
         else:
             try:
-                await message.answer(answer)
+                await send_response(answer)
             except TelegramBadRequest as e:
                 if 'can\'t parse entities' in str(e):
-                    await message.answer(answer, parse_mode=ParseMode.HTML)
+                    await send_response(answer, parse_mode=ParseMode.HTML)
                 else:
                     raise
 
