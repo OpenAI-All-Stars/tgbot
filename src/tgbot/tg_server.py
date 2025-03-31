@@ -321,7 +321,15 @@ async def send_answer(message: types.Message):
                 await send_response(answer)
             except TelegramBadRequest as e:
                 if 'can\'t parse entities' in str(e):
-                    await send_response(answer, parse_mode=ParseMode.HTML)
+                    try:
+                        await send_response(answer, parse_mode=ParseMode.HTML)
+                    except TelegramBadRequest as e:
+                        if 'can\'t parse entities' in str(e):
+                            await send_document_response(
+                                BufferedInputFile(answer.encode(), filename='answer.txt'),
+                            )
+                        else:
+                            raise
                 else:
                     raise
 
