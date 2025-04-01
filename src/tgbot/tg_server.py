@@ -11,13 +11,13 @@ from openai.types.completion_usage import CompletionUsage
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.enums import ParseMode
-from asyncpg import UniqueViolationError
 from simple_settings import settings
 
 from tgbot import price, sentry_aiogram_integration
-from tgbot.deps import telemetry, db, tg_bot
+from tgbot.deps import telemetry, tg_bot
 from tgbot.repositories import http_openai, sql_chat_messages, sql_users, sql_wallets
 from tgbot.servicecs import ai, wallet
+from tgbot.servicecs.user import registration
 from tgbot.utils import convert_pdf_to_text, get_sign, tick_iterator, skip_message
 
 
@@ -44,21 +44,7 @@ async def cmd_start(message: types.Message):
         await message.answer(ALREADY_MSG)
         return
 
-    try:
-        async with db.get().transaction():
-            await sql_users.create(
-                message.from_user.id,
-                '',
-                message.from_user.full_name,
-                message.from_user.username or '',
-            )
-            await sql_wallets.create(
-                message.from_user.id,
-                0,
-            )
-            await wallet.add(message.from_user.id, 100_000)
-    except UniqueViolationError:
-        pass
+    await registration(message)
     await message.answer('Добро пожаловать! За регистрацию вам зачислено $0.1!')
 
 
@@ -262,8 +248,7 @@ async def send_answer(message: types.Message):
         sql_wallets.get(message.from_user.id)
     )
     if not user:
-        await send_response('Вы не зарегистрированы в боте. Вызовите команду /start.')
-        return
+        user, balance = await registration(message)
     if balance <= 0:
         await send_response(NEED_PAY_MSG)
         return
@@ -326,8 +311,17 @@ async def send_answer(message: types.Message):
 
 
 async def run() -> None:
-    await tg_bot.get().set_my_commands(commands=[
-        BotCommand(command='/pay', description='Пополнить баланс'),
-        BotCommand(command='/clean', description='Очистить контекст'),
-    ])
+    await tg_bot.get().set_my_commands(
+        commands=[
+            BotCommand(command='/pay', description='Пополнить баланс'),
+            BotCommand(command='/clean', description='Очистить контекст'),
+        ],
+        scope=types.BotCommandScopeAllPrivateChats(),
+    )
+    await tg_bot.get().set_my_commands(
+        commands=[
+            BotCommand(command='/clean', description='Очистить контекст'),
+        ],
+        scope=types.BotCommandScopeAllGroupChats(),
+    )
     await dp.start_polling(tg_bot.get(), handle_signals=False)
