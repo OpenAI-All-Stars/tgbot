@@ -7,6 +7,7 @@ import time
 from typing import AsyncIterator, Awaitable, Callable, Iterable
 
 
+from aiogram import types
 import pymupdf
 
 
@@ -71,3 +72,22 @@ def sync_convert_pdf_to_text(data: bytes | io.BytesIO) -> str:
 
 def fix_invalid_markdown(text: str) -> str:
     return HEADER_REGEX.sub(lambda m: f'**{m.group(1)}**', text)
+
+
+async def skip_message(message: types.Message) -> bool:
+    assert message.bot
+    me = await message.bot.me()
+
+    if message.chat.type == 'private':
+        return False
+    if message.chat.type not in ['group', 'supergroup']:
+        return True
+    if message.text and f"@{me.username}" in message.text:
+        return False
+    elif (
+        message.reply_to_message
+        and message.reply_to_message.from_user
+        and message.reply_to_message.from_user.id == me.id
+    ):
+        return False
+    return True

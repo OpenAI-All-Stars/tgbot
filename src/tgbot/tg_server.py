@@ -18,7 +18,7 @@ from tgbot import price, sentry_aiogram_integration
 from tgbot.deps import telemetry, db, tg_bot
 from tgbot.repositories import http_openai, sql_chat_messages, sql_users, sql_wallets
 from tgbot.servicecs import ai, wallet
-from tgbot.utils import convert_pdf_to_text, get_sign, tick_iterator
+from tgbot.utils import convert_pdf_to_text, get_sign, tick_iterator, skip_message
 
 
 ALREADY_MSG = 'И снова добрый день!'
@@ -194,10 +194,13 @@ async def successful_payment_handler(message: types.Message):
 
 @dp.message(F.document)
 async def handle_document(message: types.Message):
-    telemetry.get().incr('messages.document')
+    if await skip_message(message):
+        return
+
     assert message.from_user
     assert message.document
     assert message.document.file_name
+    telemetry.get().incr('messages.document')
     is_group = message.chat.type in ['group', 'supergroup']
     send_response = message.reply if is_group else message.answer
     balance = await sql_wallets.get(message.from_user.id)
@@ -223,23 +226,11 @@ async def handle_document(message: types.Message):
 
 @dp.message()
 async def main_handler(message: types.Message):
-    assert message.bot
     if message.from_user is None:
         return None
 
-    me = await message.bot.me()
-
-    if message.chat.type in ['group', 'supergroup']:
-        if message.text and f"@{me.username}" in message.text:
-            pass
-        elif (
-            message.reply_to_message
-            and message.reply_to_message.from_user
-            and message.reply_to_message.from_user.id == me.id
-        ):
-            pass
-        else:
-            return
+    if await skip_message(message):
+        return
 
     telemetry.get().incr('messages.main')
     stop = Event()
