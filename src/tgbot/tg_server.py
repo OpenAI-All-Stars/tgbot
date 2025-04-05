@@ -44,7 +44,7 @@ async def cmd_start(message: types.Message):
         await message.answer(ALREADY_MSG)
         return
 
-    await registration(message)
+    await registration(message.from_user)
     await message.answer('Добро пожаловать! За регистрацию вам зачислено $0.1!')
 
 
@@ -210,6 +210,45 @@ async def handle_document(message: types.Message):
     await send_response('Файл прочитан.')
 
 
+@dp.inline_query.register
+async def inline_handler(inline_query: types.InlineQuery):
+    if not (inline_query.query and inline_query.query[-1] in '.?'):
+        item = types.InlineQueryResultArticle(
+            id='1',
+            title='Поставь . или ? в конце и я подготовлю ответ',
+            input_message_content=types.InputTextMessageContent(message_text='?'),
+        )
+        await tg_bot.get().answer_inline_query(inline_query.id, results=[item], cache_time=1)
+        return
+
+    user, balance = await asyncio.gather(
+        sql_users.get(inline_query.from_user.id),
+        sql_wallets.get(inline_query.from_user.id)
+    )
+    if not user:
+        user, balance = await registration(inline_query.from_user)
+    if balance <= 0:
+        item = types.InlineQueryResultArticle(
+            id='1',
+            title='Недостаточно средств на счету',
+            input_message_content=types.InputTextMessageContent(message_text=NEED_PAY_MSG),
+        )
+        await tg_bot.get().answer_inline_query(inline_query.id, results=[item], cache_time=1)
+        return
+
+    answer = await ai.send_only_text(inline_query.from_user.id, inline_query.query.strip())
+    if not answer:
+        return
+
+    input_content = types.InputTextMessageContent(message_text=answer)
+    item = types.InlineQueryResultArticle(
+        id='1',
+        title='Отправить',
+        input_message_content=input_content,
+    )
+    await tg_bot.get().answer_inline_query(inline_query.id, results=[item], cache_time=1)
+
+
 @dp.message()
 async def main_handler(message: types.Message):
     if message.from_user is None:
@@ -248,7 +287,7 @@ async def send_answer(message: types.Message):
         sql_wallets.get(message.from_user.id)
     )
     if not user:
-        user, balance = await registration(message)
+        user, balance = await registration(message.from_user)
     if balance <= 0:
         await send_response(NEED_PAY_MSG)
         return
@@ -278,7 +317,6 @@ async def send_answer(message: types.Message):
     if not contents:
         return
 
-    print(contents)
     state = await ai.get_chat_state(message)
     answer = await state.send(*contents)
     if isinstance(answer, dict):
