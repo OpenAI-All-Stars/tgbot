@@ -253,6 +253,12 @@ async def send_answer(message: types.Message):
         await send_response(NEED_PAY_MSG)
         return
 
+    contents = []
+    if message.photo:
+        file_params = await tg_bot.get().get_file(message.photo[-1].file_id)
+        assert file_params.file_path
+        download_url = f"{settings.TELEGRAM_BASE_URL}/file/bot{settings.TG_TOKEN}/{file_params.file_path}"
+        contents.append({'type': 'image_url', 'image_url': {'url': download_url}})
     if message.voice:
         file_params = await tg_bot.get().get_file(message.voice.file_id)
         assert file_params.file_path
@@ -263,14 +269,18 @@ async def send_answer(message: types.Message):
             requeset_text = await http_openai.audio2text(file_data)
         finally:
             file_data.close()
-        await wallet.spend(message.from_user.id, price.audio2text(message.voice.duration))
-    elif message.text:
-        requeset_text = message.text
-    else:
+        contents.append({'type': 'text', 'text': requeset_text})
+    if message.caption:
+        contents.append({'type': 'text', 'text': message.caption})
+    if message.text:
+        contents.append({'type': 'text', 'text': message.text})
+
+    if not contents:
         return
 
+    print(contents)
     state = await ai.get_chat_state(message)
-    answer = await state.send(requeset_text)
+    answer = await state.send(*contents)
     if isinstance(answer, dict):
         for name, body in answer.items():
             if isinstance(body, str):

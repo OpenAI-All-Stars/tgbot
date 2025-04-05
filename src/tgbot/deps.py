@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from aiogram import Bot
+from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode
@@ -68,7 +69,7 @@ async def use_telemetry() -> AsyncIterator[StatsClient]:
 async def use_tg_bot() -> AsyncIterator[Bot]:
     bot = Bot(
         settings.TG_TOKEN,
-        parse_mode=ParseMode.MARKDOWN,
+        default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN),
         session=AiohttpSession(
             proxy=settings.TG_PROXY,
             api=TelegramAPIServer.from_base(settings.TELEGRAM_BASE_URL),
