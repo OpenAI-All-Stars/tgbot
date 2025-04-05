@@ -2,11 +2,13 @@ import json
 import logging
 
 from aiogram import types
+from openai import BadRequestError
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_function_message_param import ChatCompletionFunctionMessageParam
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
 from openai.types.chat.chat_completion_user_message_param import ChatCompletionUserMessageParam
 from openai.types.chat.chat_completion_assistant_message_param import FunctionCall, ChatCompletionAssistantMessageParam
+from openai.types.chat.chat_completion_content_part_param import ChatCompletionContentPartParam
 from simple_settings import settings
 
 from tgbot import price
@@ -18,6 +20,13 @@ from tgbot.utils import fix_invalid_markdown
 
 
 logger = logging.getLogger(__name__)
+SYSTEM_MESSAGE = (
+    'Доступная разметка текста: '
+    r'**bold**, *italic*, `code`, ~~strike~~, ```c++\ncode```, [Link text Here](https://link-url-here.org).'
+    'Доступно экранирование спец-символов из разметки обратным слешем.'
+    'Если пользователь просит построить график или создать изображение, '
+    'сразу отправь файл без предварительного показа изображения в сообщении.'
+)
 
 
 class ChatState:
@@ -28,8 +37,8 @@ class ChatState:
         self.chat_id = message.chat.id
         self.messages = messages
 
-    async def send(self, text: str) -> dict | bytes | str:
-        new_message = ChatCompletionUserMessageParam(role='user', content=text)
+    async def send(self, *contents: ChatCompletionContentPartParam) -> dict | bytes | str:
+        new_message = ChatCompletionUserMessageParam(role='user', content=contents)
         self.messages.append(new_message)
         for _ in range(5):
             try:
@@ -43,6 +52,9 @@ class ChatState:
                     content=e.message,
                 ))
                 await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
+            except BadRequestError:
+                logger.exception('BadRequestError')
+                return 'Ошибка'
             except Exception as e:
                 logger.exception(e)
                 self.messages.append(ChatCompletionSystemMessageParam(
@@ -50,18 +62,12 @@ class ChatState:
                     content=str(e),
                 ))
                 await sql_chat_messages.create(self.user_id, self.chat_id, self.messages[-1])
-        return 'ошибка'
+        return 'Ошибка'
 
     async def _send_messages(self) -> dict | bytes | str | None:
         messages = [ChatCompletionSystemMessageParam(
             role='system',
-            content=(
-                'Доступная разметка текста: '
-                r'**bold**, *italic*, `code`, ~~strike~~, ```c++\ncode```, [Link text Here](https://link-url-here.org).'
-                'Доступно экранирование спец-символов из разметки обратным слешем.'
-                'Если пользователь просит построить график или создать изображение, '
-                'сразу отправь файл без предварительного показа изображения в сообщении.'
-            ),
+            content=SYSTEM_MESSAGE,
         )] + self.messages.copy()
         resp = await http_openai.send(str(self.chat_id), messages)
         await wallet.spend(self.user_id, price.chatgpt_completion(resp.usage))
@@ -82,6 +88,9 @@ class ChatState:
         function_call = assistant_message.get('function_call')
         if not function_call:
             answer = assistant_message.get('content') or ''
+            if not isinstance(answer, str):
+                logger.exception('Unsuported content type on function_call')
+                return 'Ошибка вызова функции'
             try:
                 return fix_invalid_markdown(answer)
             except Exception as e:
