@@ -202,6 +202,13 @@ async def append_text(user_id: int, text: str):
     ))
 
 
+async def send_only_text(user_id: int, text: str) -> str | None:
+    messages: list[ChatCompletionMessageParam] = [ChatCompletionUserMessageParam(role='user', content=text)]
+    resp = await http_openai.send(str(user_id), messages)
+    await wallet.spend(user_id, price.chatgpt_completion(resp.usage))
+    return resp.choices[0].message.content
+
+
 class BadCallException(Exception):
     func_name: str
     message: str
