@@ -18,9 +18,6 @@ import asyncpg
 from asyncpg import CannotConnectNowError
 
 
-logger = logging.getLogger(__name__)
-
-
 @pytest.fixture(scope='session')
 def app_env(mock_server_url, postgres_dsn):
     return {
@@ -216,7 +213,7 @@ class MockServer:
 
     @web.middleware
     async def _route_middleware(self, request: web.Request, handler):
-        logger.info('{} {} {}'.format(request.method, request.path, await request.text()))
+        print('{} {} {}'.format(request.method, request.path, await request.text()))
         for route in self._routes:
             if route['method'] != request.method:
                 continue
